@@ -14,7 +14,6 @@ function collect(origin: string) {
     }
     return undefined;
   };
-  // HTML-Zeichen wie &ndash; oder &amp; in echte Zeichen umwandeln (ohne Skripte auszuführen)
   const clean = (v?: unknown) => {
     if (typeof v !== "string" || !v.trim()) return undefined;
     const t = new DOMParser().parseFromString(v, "text/html").documentElement.textContent || v;
@@ -50,8 +49,6 @@ function collect(origin: string) {
       find(JSON.parse(s.textContent || ""));
     } catch {}
   });
-
-  // Shops wie Douglas nennen im Produktnamen nur die Variante („50 ml“)
   const isVariant = (v?: string) => !v || v.length < 12 || /^[\d.,\s]+(ml|l|g|kg|cm|mm|m|stk|stück)?$/i.test(v);
   const pageTitle = clean(d.title)?.replace(/\s*[:|–-]\s*(Amazon\.[a-z.]+|Douglas|Thalia)\b.*$/i, "");
   const h1 = text("#productTitle") || text("h1");
@@ -62,8 +59,6 @@ function collect(origin: string) {
   }
   if (title && brand && !title.toLowerCase().includes(brand.toLowerCase())) title = `${brand} ${title}`;
   title = title || clean(meta("og:title", "twitter:title")) || h1 || pageTitle;
-
-  // Amazon hat weder Open Graph noch Produktdaten, dafür feste Elemente auf der Seite
   const amazonImg = d.querySelector<HTMLImageElement>("#landingImage, #imgBlkFront, #main-image");
   const priceEl = d.querySelector<HTMLElement>('[itemprop="price"]');
   const data = {
@@ -91,7 +86,10 @@ function collect(origin: string) {
 }
 
 export function bookmarkletHref(origin: string): string {
-  return `javascript:(${collect.toString()})(${JSON.stringify(origin)});void 0`;
+  // Kommentare und Zeilenumbrüche würden den Knopf kaputt machen, wenn der Browser
+  // ihn als Lesezeichen speichert. Darum wird der Code vollständig kodiert.
+  const code = `(${collect.toString()})(${JSON.stringify(origin)});void 0`;
+  return `javascript:${encodeURIComponent(code)}`;
 }
 
 export interface Captured {
