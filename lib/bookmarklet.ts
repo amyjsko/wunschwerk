@@ -14,14 +14,24 @@ function collect(origin: string) {
     }
     return undefined;
   };
-  let name: string | undefined, image: string | undefined, price: unknown, currency: string | undefined;
+  // HTML-Zeichen wie &ndash; oder &amp; in echte Zeichen umwandeln (ohne Skripte auszuführen)
+  const clean = (v?: unknown) => {
+    if (typeof v !== "string" || !v.trim()) return undefined;
+    const t = new DOMParser().parseFromString(v, "text/html").documentElement.textContent || v;
+    return t.replace(/\s+/g, " ").trim();
+  };
+  const text = (sel: string) => clean(d.querySelector<HTMLElement>(sel)?.textContent);
+  let name: string | undefined, brand: string | undefined, image: string | undefined;
+  let price: unknown, currency: string | undefined;
   const find = (n: unknown): void => {
     if (!n || typeof n !== "object" || name) return;
     if (Array.isArray(n)) return n.forEach(find);
     const o = n as Record<string, unknown>;
     const t = o["@type"];
     if (t === "Product" || (Array.isArray(t) && t.includes("Product"))) {
-      name = o.name as string;
+      name = clean(o.name);
+      const br = o.brand as unknown;
+      brand = clean(typeof br === "object" && br ? (br as Record<string, unknown>).name : br);
       let img = o.image as unknown;
       if (Array.isArray(img)) img = img[0];
       if (img && typeof img === "object") img = (img as Record<string, unknown>).url;
@@ -40,13 +50,38 @@ function collect(origin: string) {
       find(JSON.parse(s.textContent || ""));
     } catch {}
   });
+
+  // Shops wie Douglas nennen im Produktnamen nur die Variante („50 ml“)
+  const isVariant = (v?: string) => !v || v.length < 12 || /^[\d.,\s]+(ml|l|g|kg|cm|mm|m|stk|stück)?$/i.test(v);
+  const pageTitle = clean(d.title)?.replace(/\s*[:|–-]\s*(Amazon\.[a-z.]+|Douglas|Thalia)\b.*$/i, "");
+  const h1 = text("#productTitle") || text("h1");
+  let title = name;
+  if (isVariant(title)) {
+    const full = [clean(meta("og:title")), h1, pageTitle].find((c) => !isVariant(c));
+    title = full ? (name && !full.includes(name) ? `${full} ${name}` : full) : title;
+  }
+  if (title && brand && !title.toLowerCase().includes(brand.toLowerCase())) title = `${brand} ${title}`;
+  title = title || clean(meta("og:title", "twitter:title")) || h1 || pageTitle;
+
+  // Amazon hat weder Open Graph noch Produktdaten, dafür feste Elemente auf der Seite
+  const amazonImg = d.querySelector<HTMLImageElement>("#landingImage, #imgBlkFront, #main-image");
   const priceEl = d.querySelector<HTMLElement>('[itemprop="price"]');
   const data = {
     url: location.href.split("#")[0],
-    title: name || meta("og:title", "twitter:title") || d.title,
-    image: image || meta("og:image", "twitter:image"),
+    title,
+    image:
+      image ||
+      meta("og:image", "twitter:image") ||
+      amazonImg?.getAttribute("data-old-hires") ||
+      amazonImg?.src ||
+      undefined,
     price: String(
-      price ?? meta("product:price:amount", "og:price:amount") ?? priceEl?.getAttribute("content") ?? priceEl?.textContent ?? "",
+      price ??
+        meta("product:price:amount", "og:price:amount") ??
+        priceEl?.getAttribute("content") ??
+        priceEl?.textContent ??
+        text("#corePrice_feature_div .a-offscreen, #corePriceDisplay_desktop_feature_div .a-offscreen, .priceToPay .a-offscreen, #price_inside_buybox, .a-price .a-offscreen") ??
+        "",
     ),
     currency: currency || meta("product:price:currency", "og:price:currency") || "EUR",
     shop: location.hostname.replace(/^www\./, ""),
