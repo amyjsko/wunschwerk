@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import WishBoard from "@/components/WishBoard";
 import AddWish from "@/components/AddWish";
+import BookmarkletButton from "@/components/BookmarkletButton";
 import ShareDialog from "@/components/ShareDialog";
 import { getList, upsertList } from "@/lib/storage";
 import { templateList } from "@/lib/templates";
@@ -98,6 +99,7 @@ export default function EditorPage() {
         <section className="mt-6">
           <span className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Wunsch hinzufügen</span>
           <AddWish onAdd={(w) => update({ wishes: [...list.wishes, w] })} />
+          <BookmarkletButton />
         </section>
 
         {list.wishes.length > 0 && (
