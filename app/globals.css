@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-playfair), ui-serif, Georgia, serif;
+  --font-script: var(--font-script), cursive;
+  --font-round: var(--font-fredoka), ui-rounded, system-ui, sans-serif;
+}
+
+body {
+  background: #faf7f2;
+  color: #1f1a17;
+}
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; }
+  .print-sheet { box-shadow: none !important; margin: 0 !important; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
