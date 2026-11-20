@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { extractProduct } from "@/lib/extract";
+import { extractProduct, looksBlocked, titleFromUrl } from "@/lib/extract";
 
 export const runtime = "nodejs";
 
@@ -26,11 +26,18 @@ export async function GET(req: Request) {
       redirect: "follow",
       signal: AbortSignal.timeout(8000),
     });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const html = (await res.text()).slice(0, 2_000_000);
     const preview = extractProduct(html, res.url || url.toString());
+    if (looksBlocked(preview.title)) throw new Error("blocked");
     return NextResponse.json(preview);
   } catch {
-    // Seite blockiert oder nicht erreichbar: wenigstens den Shop-Namen zurückgeben
-    return NextResponse.json({ shop: url.hostname.replace(/^www\./, ""), blocked: true });
+    // Shop blockiert (z. B. Amazon) oder nicht erreichbar:
+    // Shop-Namen und, wenn möglich, einen Titel aus dem Link zurückgeben
+    return NextResponse.json({
+      shop: url.hostname.replace(/^www\./, ""),
+      title: titleFromUrl(url.toString()),
+      blocked: true,
+    });
   }
 }

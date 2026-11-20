@@ -22,7 +22,11 @@ export default function AddWish({ onAdd }: { onAdd: (w: Wish) => void }) {
       const data = (await res.json()) as ProductPreview & { error?: string; blocked?: boolean };
       if (data.error) return setHint(data.error);
       if (data.blocked || !data.title)
-        setHint("Dieser Shop lässt sich nicht automatisch auslesen. Trag die Angaben einfach selbst ein.");
+        setHint(
+          data.title
+            ? "Dieser Shop blockiert das automatische Auslesen. Den Titel haben wir aus dem Link geraten, Preis und Bild trägst du bitte selbst ein."
+            : "Dieser Shop blockiert das automatische Auslesen. Trag die Angaben einfach selbst ein.",
+        );
       setDraft({ ...data, url: href, priceText: data.price != null ? String(data.price).replace(".", ",") : "" });
     } catch {
       setHint("Das hat nicht geklappt. Prüf den Link oder trag den Wunsch selbst ein.");

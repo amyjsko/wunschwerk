@@ -134,3 +134,31 @@ function decodeEntities(s: string) {
     .replace(/&nbsp;/g, " ")
     .replace(/&#(\d+);/g, (_, d) => String.fromCharCode(Number(d)));
 }
+
+/** Seiten, die statt des Produkts eine Sperr- oder Captcha-Seite liefern. */
+const BLOCK_TITLES =
+  /too many requests|robot check|captcha|access denied|just a moment|attention required|are you a (human|robot)|zugriff verweigert|service unavailable|forbidden|bot verification|^amazon\.[a-z.]+$|^error\b/i;
+
+export function looksBlocked(title?: string): boolean {
+  return !title || BLOCK_TITLES.test(title.trim());
+}
+
+/** Macht aus einem Link wie amazon.de/Kuschelige-Wolldecke-Grau/dp/B0... einen lesbaren Titel. */
+export function titleFromUrl(pageUrl: string): string | undefined {
+  try {
+    const parts = new URL(pageUrl).pathname
+      .split("/")
+      .map((p) => decodeURIComponent(p).replace(/\.(html?|php|aspx?)$/i, ""))
+      .filter((p) => /[a-zäöüß]{3,}.*[-_].*[a-zäöüß]{2,}/i.test(p) && !/^(dp|gp|p|product|produkt|artikel|shop|de|en)$/i.test(p));
+    const best = parts.sort((a, b) => b.length - a.length)[0];
+    if (!best) return undefined;
+    const words = best
+      .split(/[-_+]+/)
+      .filter((w) => w && !/^[A-Z0-9]{8,}$/.test(w) && !/^\d+$/.test(w));
+    if (words.length < 2) return undefined;
+    const t = words.join(" ");
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  } catch {
+    return undefined;
+  }
+}
