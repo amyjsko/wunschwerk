@@ -39,9 +39,11 @@ export default function Home() {
         id: uid(), title: t.defaultTitle, subtitle: "", template, layout: "raster", wishes: [], createdAt: now, updatedAt: now,
       });
       router.push(`/liste/${list.id}`);
-    } catch {
+    } catch (err) {
       setBusy(false);
-      alert("Der Wunschzettel konnte nicht angelegt werden. Bitte versuch es noch einmal.");
+      const msg = (err as { message?: string })?.message ?? String(err);
+      console.error("createList", err);
+      alert(`Der Wunschzettel konnte nicht angelegt werden. Bitte versuch es noch einmal.\n\n(${msg})`);
     }
   }
 

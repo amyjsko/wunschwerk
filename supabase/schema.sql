@@ -39,6 +39,12 @@ create policy "eigene Listen" on public.lists
   using (owner = auth.uid())
   with check (owner = auth.uid());
 
+-- Angemeldete dürfen mit ihren eigenen Listen arbeiten (die Regel oben schränkt
+-- das auf eigene Listen ein). Neue Supabase-Projekte vergeben das nicht automatisch.
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on public.lists to authenticated;
+revoke all on public.lists from anon;
+
 -- Keine direkten Rechte auf Reservierungen
 revoke all on public.reservations from anon, authenticated;
 
