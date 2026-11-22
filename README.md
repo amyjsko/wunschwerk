@@ -22,9 +22,20 @@ npm run dev
 
 Dann http://localhost:3000 öffnen.
 
+## Konto und Reservieren (Supabase)
+
+Mit Supabase werden Wunschzettel im Konto gespeichert, bekommen kurze Teilen-Links (`/w/…`)
+und Gäste können Wünsche reservieren, ohne dass die beschenkte Person es sieht.
+
+1. Supabase-Projekt anlegen, dann im **SQL Editor** den Inhalt von `supabase/schema.sql` ausführen.
+2. Unter **Authentication → URL Configuration** die Site URL auf die Online-Adresse setzen
+   und `http://localhost:3000/**` als Redirect URL ergänzen.
+3. `NEXT_PUBLIC_SUPABASE_URL` und `NEXT_PUBLIC_SUPABASE_ANON_KEY` setzen: lokal in `.env.local`,
+   online in den Vercel-Projekteinstellungen unter Environment Variables.
+
+Ohne diese Werte läuft Wunschwerk wie bisher nur im Browser.
+
 ## Nächste Schritte
 
-- Supabase als Datenbank: Login, kurze Teilen-Links, Wunschzettel auf allen Geräten
-- Reservieren durch Gäste (ohne dass die beschenkte Person es sieht)
 - Export als PNG für Instagram, Drag & Drop im Editor
 - Veröffentlichen auf Vercel

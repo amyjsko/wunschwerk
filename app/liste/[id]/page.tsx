@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import WishBoard from "@/components/WishBoard";
 import AddWish from "@/components/AddWish";
 import BookmarkletButton from "@/components/BookmarkletButton";
 import ShareDialog from "@/components/ShareDialog";
-import { getList, upsertList } from "@/lib/storage";
+import { useSession } from "@/lib/auth";
+import { getList, saveList } from "@/lib/store";
 import { templateList } from "@/lib/templates";
 import { formatPrice } from "@/lib/format";
 import type { Wish, WishList } from "@/lib/types";
@@ -15,23 +16,39 @@ export default function EditorPage() {
   const { id } = useParams<{ id: string }>();
   const [list, setList] = useState<WishList | null | undefined>(undefined);
   const [sharing, setSharing] = useState(false);
+  const [saveState, setSaveState] = useState<"saved" | "saving" | "error">("saved");
+  const session = useSession();
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => setList(getList(id) ?? null), [id]);
+  useEffect(() => {
+    if (session === undefined) return;
+    getList(session, id).then((l) => setList(l ?? null)).catch(() => setList(null));
+  }, [id, session]);
+
+  function persist(next: WishList) {
+    if (!next.slug) return void saveList(next);
+    // Im Konto speichern wir gesammelt, nicht bei jedem Tastendruck
+    setSaveState("saving");
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => {
+      saveList(next).then(() => setSaveState("saved")).catch(() => setSaveState("error"));
+    }, 600);
+  }
 
   function update(patch: Partial<WishList>) {
     setList((prev) => {
       if (!prev) return prev;
       const next = { ...prev, ...patch, updatedAt: Date.now() };
-      upsertList(next);
+      persist(next);
       return next;
     });
   }
 
-  if (list === undefined) return null;
+  if (list === undefined) return <main className="py-24 text-center text-neutral-400">Wird geladen…</main>;
   if (list === null)
     return (
       <main className="py-24 text-center">
-        <p>Diesen Wunschzettel gibt es in diesem Browser nicht.</p>
+        <p>Diesen Wunschzettel gibt es hier nicht. Vielleicht bist du nicht angemeldet?</p>
         <Link href="/" className="text-rose-600 underline">Zur Startseite</Link>
       </main>
     );
@@ -50,7 +67,14 @@ export default function EditorPage() {
     <div className="min-h-screen lg:grid lg:grid-cols-[380px_1fr]">
       <aside className="no-print border-b border-neutral-200 bg-white p-5 lg:h-screen lg:overflow-y-auto lg:border-b-0 lg:border-r">
         <div className="flex items-center justify-between">
-          <Link href="/" className="text-sm text-neutral-500 hover:text-rose-600">← Übersicht</Link>
+          <div className="flex items-center gap-2">
+            <Link href="/" className="text-sm text-neutral-500 hover:text-rose-600">← Übersicht</Link>
+            {list.slug && (
+              <span className={`text-xs ${saveState === "error" ? "text-red-600" : "text-neutral-400"}`}>
+                {saveState === "saving" ? "speichert…" : saveState === "error" ? "nicht gespeichert!" : "gespeichert ✓"}
+              </span>
+            )}
+          </div>
           <div className="flex gap-2">
             <button onClick={() => window.print()} className="rounded-full border border-neutral-300 px-3 py-1.5 text-sm hover:bg-neutral-50">
               Drucken / PDF

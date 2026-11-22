@@ -1,10 +1,19 @@
 import { templates } from "@/lib/templates";
 import { formatPrice } from "@/lib/format";
-import type { WishList } from "@/lib/types";
+import type { Wish, WishList } from "@/lib/types";
 
 type BoardList = Pick<WishList, "title" | "subtitle" | "template" | "layout" | "wishes">;
 
-export default function WishBoard({ list }: { list: BoardList }) {
+interface ReserveProps {
+  /** wish_id -> Name der Person, die reserviert hat */
+  reserved: Record<string, string>;
+  /** wish_ids, die dieser Gast selbst reserviert hat */
+  mine: Set<string>;
+  onReserve: (w: Wish) => void;
+  onCancel: (w: Wish) => void;
+}
+
+export default function WishBoard({ list, reserve }: { list: BoardList; reserve?: ReserveProps }) {
   const t = templates[list.template] ?? templates.minimal;
   const grid = list.layout !== "liste";
 
@@ -40,11 +49,12 @@ export default function WishBoard({ list }: { list: BoardList }) {
           {list.wishes.map((w) => {
             const price = formatPrice(w.price, w.currency);
             const Wrapper = w.url ? "a" : "div";
+            const by = reserve?.reserved[w.id];
             return (
-              <li key={w.id} className={`${t.card} overflow-hidden`}>
+              <li key={w.id} className={`${t.card} flex flex-col overflow-hidden ${by ? "opacity-80" : ""}`}>
                 <Wrapper
                   {...(w.url ? { href: w.url, target: "_blank", rel: "noopener noreferrer" } : {})}
-                  className={`flex h-full ${grid ? "flex-col" : "flex-row items-center"}`}
+                  className={`flex flex-1 ${grid ? "flex-col" : "flex-row items-center"}`}
                 >
                   {w.image ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -72,6 +82,27 @@ export default function WishBoard({ list }: { list: BoardList }) {
                     </div>
                   </div>
                 </Wrapper>
+                {reserve && (
+                  <div className="no-print px-4 pb-4">
+                    {by ? (
+                      reserve.mine.has(w.id) ? (
+                        <button onClick={() => reserve.onCancel(w)}
+                          className="w-full rounded-full border border-current py-1.5 text-sm opacity-80">
+                          Von dir reserviert · aufheben
+                        </button>
+                      ) : (
+                        <div className="w-full rounded-full bg-black/10 py-1.5 text-center text-sm">
+                          🎁 Reserviert von {by}
+                        </div>
+                      )
+                    ) : (
+                      <button onClick={() => reserve.onReserve(w)}
+                        className="w-full rounded-full bg-rose-600 py-1.5 text-sm font-semibold text-white hover:bg-rose-700">
+                        Ich schenke das
+                      </button>
+                    )}
+                  </div>
+                )}
               </li>
             );
           })}
