@@ -30,10 +30,10 @@ und Gäste können Wünsche reservieren, ohne dass die beschenkte Person es sieh
 1. Supabase-Projekt anlegen, dann im **SQL Editor** den Inhalt von `supabase/schema.sql` ausführen.
 2. Unter **Authentication → URL Configuration** die Site URL auf die Online-Adresse setzen
    und `http://localhost:3000/**` als Redirect URL ergänzen.
-3. `NEXT_PUBLIC_SUPABASE_URL` und `NEXT_PUBLIC_SUPABASE_ANON_KEY` setzen: lokal in `.env.local`,
+3. Die öffentlichen Werte von Amys Projekt stehen in `lib/supabase.ts`. Für ein anderes Projekt
+   `NEXT_PUBLIC_SUPABASE_URL` und `NEXT_PUBLIC_SUPABASE_ANON_KEY` setzen: lokal in `.env.local`,
    online in den Vercel-Projekteinstellungen unter Environment Variables.
 
-Ohne diese Werte läuft Wunschwerk wie bisher nur im Browser.
 
 ## Nächste Schritte
 
