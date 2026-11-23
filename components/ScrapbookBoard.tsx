@@ -34,7 +34,7 @@ export function proxied(src?: string) {
 }
 
 export function pageHeight(design: Design) {
-  const bottom = Math.max(0, ...design.items.map((i) => i.y + (i.kind === "wish" ? i.w * 0.85 : i.w * 0.5)));
+  const bottom = Math.max(0, ...design.items.map((i) => i.y + (i.kind === "wish" ? i.w * 0.85 : i.kind === "bild" ? (i.w / (i.ratio ?? 1)) * 0.6 : i.w * 0.5)));
   return Math.max(PAGE_H, Math.ceil((bottom + 120) / 100) * 100);
 }
 
@@ -196,6 +196,17 @@ function renderItem(item: DesignItem, wishById: Record<string, Wish>, reserve: R
     );
   }
   if (item.kind === "tag") return <GiftTag item={item} />;
+  if (item.kind === "bild") {
+    if (!item.src) return null;
+    return (
+      <div
+        style={item.rahmen ? { background: "#fffdf9", padding: "5%", paddingBottom: "14%", boxShadow: "0 3px 10px rgba(60,40,20,.25)" } : { filter: "drop-shadow(0 2px 3px rgba(60,40,20,.2))" }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={item.src} alt="" draggable={false} style={{ display: "block", width: "100%", aspectRatio: String(item.ratio ?? 1), objectFit: "contain" }} />
+      </div>
+    );
+  }
   if (item.kind === "text") {
     const f = fontMap[item.font ?? "hand"] ?? fontMap.hand;
     return (

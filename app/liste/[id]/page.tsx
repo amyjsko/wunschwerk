@@ -74,8 +74,8 @@ export default function EditorPage() {
         {
           ...item,
           id,
-          x: 500 + Math.round((Math.random() - 0.5) * 200),
-          y: 380 + Math.round((Math.random() - 0.5) * 160),
+          x: 500 + Math.round((Math.random() - 0.5) * 520),
+          y: 420 + Math.round((Math.random() - 0.5) * 360),
           rot: Math.round((Math.random() - 0.5) * 16),
           z: Math.max(0, ...d.items.map((i) => i.z)) + 1,
         },
@@ -233,6 +233,7 @@ export default function EditorPage() {
               onAddText={() => addItem({ kind: "text", text: "Dein Text", font: "hand", w: 280 })}
               onAddTag={(tid) => addItem({ kind: "tag", sticker: tid, text: "Für …", font: "hand", w: tid === "anh-rund" ? 170 : 240 })}
               template={list.template}
+              onAddPicture={(pic) => addItem({ kind: "bild", src: pic.src, ratio: pic.ratio, w: pic.ratio >= 1 ? 300 : Math.round(300 * pic.ratio) + 60 })}
               onChangeSelected={(patch) => selectedId && changeItem(selectedId, patch)}
               onLayer={layer}
               onDeleteSelected={deleteSelected}

@@ -1,5 +1,6 @@
 /* Eigenes Sticker-Set im Scrapbook-Stil. Alles als SVG, damit es scharf bleibt
    und sich einfärben lässt. */
+import { deko2 } from "./deko2";
 
 export interface StickerDef {
   id: string;
@@ -380,6 +381,8 @@ export const stickers: StickerDef[] = [
     ),
   },
 ];
+
+stickers.push(...deko2);
 
 /** Eigene Bild-Sticker (PNG in /public/sticker). Neue Bilder einfach hier eintragen. */
 function png(file: string) {

@@ -56,7 +56,7 @@ export type FontId = "hand" | "marker" | "schreib" | "serif" | "rund" | "weihnac
 
 export interface DesignItem {
   id: string;
-  kind: "wish" | "sticker" | "text" | "tag";
+  kind: "wish" | "sticker" | "text" | "tag" | "bild";
   /** Mittelpunkt auf der Seite (Seite ist 1000 × 1400) */
   x: number;
   y: number;
@@ -70,6 +70,11 @@ export interface DesignItem {
   text?: string;
   font?: FontId;
   color?: string;
+  /** Eigenes Bild (Daten-Link) und Seitenverhältnis */
+  src?: string;
+  ratio?: number;
+  /** Weißer Rand wie ein Foto */
+  rahmen?: boolean;
   /** Dicke von Washi-Tape auf der Seite */
   h?: number;
 }
