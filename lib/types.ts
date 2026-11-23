@@ -66,6 +66,8 @@ export interface DesignItem {
   text?: string;
   font?: FontId;
   color?: string;
+  /** Dicke von Washi-Tape auf der Seite */
+  h?: number;
 }
 
 export interface Design {

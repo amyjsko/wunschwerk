@@ -228,7 +228,7 @@ export default function EditorPage() {
               }
               onAddSticker={(sid) => {
                 const def = stickerMap[sid];
-                addItem({ kind: "sticker", sticker: sid, w: def?.w ?? 100 });
+                addItem({ kind: "sticker", sticker: sid, w: def?.w ?? 100, ...(def?.washi ? { h: def.h } : {}) });
               }}
               onAddText={() => addItem({ kind: "text", text: "Dein Text", font: "hand", w: 280 })}
               onChangeSelected={(patch) => selectedId && changeItem(selectedId, patch)}

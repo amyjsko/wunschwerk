@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { fontMap, PAGE_H, PAGE_W, paperMap } from "@/lib/design";
 import { formatPrice } from "@/lib/format";
 import type { Design, DesignItem, Wish } from "@/lib/types";
-import { stickerMap } from "./stickers";
+import { stickerMap, WashiTape } from "./stickers";
 
 export interface ReserveProps {
   reserved: Record<string, string>;
@@ -98,7 +98,7 @@ export default function ScrapbookBoard({ design, wishes, editable, selectedId, o
       let rot = r0 + ((a - a0) * 180) / Math.PI;
       rot = ((rot + 540) % 360) - 180;
       if (Math.abs(rot) < 2.5) rot = 0;
-      onChangeItem?.(item.id, { rot: Math.round(rot * 10) / 10, w: Math.round(Math.min(950, Math.max(30, (w0 * d) / d0))) });
+      onChangeItem?.(item.id, { rot: Math.round(rot * 10) / 10, w: Math.round(Math.min(1200, Math.max(item.kind === "sticker" && stickerMap[item.sticker ?? ""]?.washi ? 60 : 30, (w0 * d) / d0))) });
     };
     const up = () => {
       el.removeEventListener("pointermove", move);
@@ -174,6 +174,7 @@ function renderItem(item: DesignItem, wishById: Record<string, Wish>, reserve: R
   if (item.kind === "sticker") {
     const def = stickerMap[item.sticker ?? ""];
     if (!def) return null;
+    if (def.washi) return <WashiTape name={def.washi} height={item.h ?? def.h ?? 42} />;
     return (
       <div style={{ width: "100%", aspectRatio: String(def.ratio) }} aria-hidden>
         {def.draw(item.color ?? def.color)}

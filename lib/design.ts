@@ -112,7 +112,7 @@ const templateStickers: Record<TemplateId, string[]> = {
   minimal: ["funkeln", "blume", "herz", "zweig", "stern"],
 };
 
-const tapes = ["tape-streifen", "tape-punkte", "tape-karo", "tape-uni"];
+const tapes = ["washi-streifen", "washi-karo", "washi-ranke", "washi-rosa"];
 
 /** Rastert Wünsche in einer lockeren Collage, leicht schräg, wie eingeklebt. */
 export function wishSlot(index: number): Pick<DesignItem, "x" | "y" | "rot"> {
@@ -147,7 +147,7 @@ export function createDesign(list: Pick<WishList, "title" | "subtitle" | "templa
     items.push({ id: uid(), kind: "wish", wishId: w.id, ...slot, w: WISH_W, z: z++ });
     items.push({
       id: uid(), kind: "sticker", sticker: tapes[i % tapes.length],
-      x: slot.x + (i % 2 ? 40 : -30), y: slot.y - 165, w: 130, rot: slot.rot + (i % 2 ? 8 : -10), z: 900 + i,
+      x: slot.x + (i % 2 ? 40 : -30), y: slot.y - 165, w: 150, h: 36, rot: slot.rot + (i % 2 ? 8 : -10), z: 900 + i,
     });
   });
 

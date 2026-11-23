@@ -10,47 +10,40 @@ export interface StickerDef {
   w: number;
   color: string;
   group: "tape" | "deko" | "doodle" | "anlass";
+  /** Bild-Washi-Tape: Name der Dateien in /public/washi */
+  washi?: string;
+  /** Standarddicke bei Washi-Tape */
+  h?: number;
   draw: (c: string) => React.ReactNode;
 }
 
 const ink = "#3b2f2a";
 
-function tape(pattern: "streifen" | "punkte" | "karo" | "uni") {
-  return (c: string) => (
-    <svg viewBox="0 0 240 60" width="100%" height="100%" preserveAspectRatio="none">
-      <defs>
-        <pattern id={`p-${pattern}-${c.slice(1)}`} width="16" height="16" patternUnits="userSpaceOnUse">
-          {pattern === "streifen" && <rect width="8" height="16" fill="#fff" opacity=".45" />}
-          {pattern === "punkte" && <circle cx="8" cy="8" r="2.6" fill="#fff" opacity=".7" />}
-          {pattern === "karo" && (
-            <>
-              <rect width="8" height="16" fill="#fff" opacity=".3" />
-              <rect width="16" height="8" fill="#fff" opacity=".3" />
-            </>
-          )}
-        </pattern>
-      </defs>
-      <path
-        d="M4 6 L10 2 L16 7 L22 2 L28 6 L232 4 L236 9 L231 15 L237 22 L232 29 L237 36 L232 43 L237 50 L232 56 L28 58 L22 54 L16 58 L10 54 L4 58 L8 50 L3 43 L8 36 L3 29 L8 22 L3 15 L8 9 Z"
-        fill={c}
-        opacity=".85"
-      />
-      {pattern !== "uni" && (
-        <path
-          d="M4 6 L10 2 L16 7 L22 2 L28 6 L232 4 L236 9 L231 15 L237 22 L232 29 L237 36 L232 43 L237 50 L232 56 L28 58 L22 54 L16 58 L10 54 L4 58 L8 50 L3 43 L8 36 L3 29 L8 22 L3 15 L8 9 Z"
-          fill={`url(#p-${pattern}-${c.slice(1)})`}
-        />
-      )}
-    </svg>
+/** Washi-Tape aus Bildern: zwei feste, abgerissene Enden und ein Mittelstück,
+   das sich endlos wiederholt. So lässt sich das Tape beliebig verlängern. */
+export function WashiTape({ name, height }: { name: string; height: number }) {
+  return (
+    <div style={{ display: "flex", width: "100%", height }} aria-hidden>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={`/washi/${name}-l.png`} alt="" draggable={false} style={{ height: "100%", width: "auto", flex: "none" }} />
+      <div style={{ flex: 1, minWidth: 0, backgroundImage: `url(/washi/${name}-m.png)`, backgroundSize: "auto 100%", backgroundRepeat: "round no-repeat", marginLeft: -0.5, marginRight: -0.5 }} />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={`/washi/${name}-r.png`} alt="" draggable={false} style={{ height: "100%", width: "auto", flex: "none" }} />
+    </div>
   );
+}
+
+function washi(name: string) {
+  // eslint-disable-next-line @next/next/no-img-element
+  return () => <img src={`/washi/${name}-preview.png`} alt="" draggable={false} style={{ width: "100%", height: "100%", objectFit: "contain" }} />;
 }
 
 export const stickers: StickerDef[] = [
   // Washi-Tape
-  { id: "tape-streifen", name: "Washi-Tape gestreift", ratio: 4, w: 200, color: "#f4a7b9", group: "tape", draw: tape("streifen") },
-  { id: "tape-punkte", name: "Washi-Tape gepunktet", ratio: 4, w: 200, color: "#a8d5c2", group: "tape", draw: tape("punkte") },
-  { id: "tape-karo", name: "Washi-Tape kariert", ratio: 4, w: 200, color: "#f6d38b", group: "tape", draw: tape("karo") },
-  { id: "tape-uni", name: "Washi-Tape uni", ratio: 4, w: 200, color: "#b9c4f2", group: "tape", draw: tape("uni") },
+  { id: "washi-streifen", name: "Washi-Tape Streifen", ratio: 4, w: 220, h: 42, color: "", group: "tape", washi: "streifen", draw: washi("streifen") },
+  { id: "washi-karo", name: "Washi-Tape Vichy-Karo", ratio: 4, w: 220, h: 42, color: "", group: "tape", washi: "karo", draw: washi("karo") },
+  { id: "washi-ranke", name: "Washi-Tape Blätterranke", ratio: 4, w: 220, h: 42, color: "", group: "tape", washi: "ranke", draw: washi("ranke") },
+  { id: "washi-rosa", name: "Washi-Tape Rosé", ratio: 4, w: 220, h: 42, color: "", group: "tape", washi: "rosa", draw: washi("rosa") },
 
   // Deko
   {
@@ -307,5 +300,8 @@ export const stickers: StickerDef[] = [
 ];
 
 export const stickerMap: Record<string, StickerDef> = Object.fromEntries(stickers.map((s) => [s.id, s]));
+// Alte Tape-Sticker zeigen jetzt auf die neuen Washi-Tapes
+for (const [alt, neu] of [["tape-streifen", "washi-streifen"], ["tape-punkte", "washi-rosa"], ["tape-karo", "washi-karo"], ["tape-uni", "washi-ranke"]])
+  stickerMap[alt] = stickerMap[neu];
 
 export const stickerColors = ["#e8577a", "#f4a7b9", "#f2c14e", "#f6d38b", "#a8d5c2", "#7fa77a", "#9cc7e8", "#b9c4f2", "#c9a7e8", "#d4a94e", "#3b2f2a", "#ffffff"];

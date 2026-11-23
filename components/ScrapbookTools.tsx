@@ -1,7 +1,7 @@
 "use client";
 import { fonts, papers, textColors } from "@/lib/design";
 import type { Design, DesignItem, FontId, PaperId } from "@/lib/types";
-import { stickerColors, stickers, type StickerDef } from "./stickers";
+import { stickerColors, stickerMap, stickers, type StickerDef } from "./stickers";
 
 const groups: { id: StickerDef["group"]; name: string }[] = [
   { id: "tape", name: "Washi-Tape" },
@@ -27,6 +27,8 @@ const label = "text-xs font-semibold uppercase tracking-wide text-neutral-500";
 
 export default function ScrapbookTools(p: Props) {
   const sel = p.selected;
+  const washi = sel?.kind === "sticker" ? stickerMap[sel.sticker ?? ""] : undefined;
+  const isWashi = !!washi?.washi;
   return (
     <div className="space-y-6">
       {sel && (
@@ -65,7 +67,19 @@ export default function ScrapbookTools(p: Props) {
               </div>
             </>
           )}
-          {sel.kind !== "wish" && (
+          {isWashi && (
+            <div className="mt-2 space-y-2 text-sm">
+              <label className="flex items-center gap-2">
+                <span className="w-14 text-neutral-600">Länge</span>
+                <input type="range" min={60} max={1000} value={sel.w} onChange={(e) => p.onChangeSelected({ w: Number(e.target.value) })} className="flex-1 accent-rose-600" />
+              </label>
+              <label className="flex items-center gap-2">
+                <span className="w-14 text-neutral-600">Dicke</span>
+                <input type="range" min={20} max={90} value={sel.h ?? washi?.h ?? 42} onChange={(e) => p.onChangeSelected({ h: Number(e.target.value) })} className="flex-1 accent-rose-600" />
+              </label>
+            </div>
+          )}
+          {sel.kind !== "wish" && !isWashi && (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {(sel.kind === "text" ? textColors : stickerColors).map((c) => (
                 <button
@@ -79,7 +93,7 @@ export default function ScrapbookTools(p: Props) {
             </div>
           )}
           <p className="mt-2 text-xs text-neutral-500">
-            Ziehen zum Verschieben. Mit dem roten Griff drehst du und änderst die Größe.
+            Ziehen zum Verschieben. Mit dem roten Griff drehst du und änderst die {isWashi ? "Länge" : "Größe"}.
             {sel.kind === "wish" && " Wünsche entfernst du unten in der Liste."}
           </p>
         </section>
@@ -111,7 +125,7 @@ export default function ScrapbookTools(p: Props) {
         {groups.map((g) => (
           <div key={g.id} className="mt-3">
             <div className="text-xs text-neutral-500">{g.name}</div>
-            <div className="mt-1 grid grid-cols-6 gap-1.5">
+            <div className={`mt-1 grid gap-1.5 ${g.id === "tape" ? "grid-cols-2" : "grid-cols-6"}`}>
               {stickers
                 .filter((s) => s.group === g.id)
                 .map((s) => (
@@ -119,7 +133,7 @@ export default function ScrapbookTools(p: Props) {
                     key={s.id}
                     onClick={() => p.onAddSticker(s.id)}
                     title={s.name}
-                    className="flex aspect-square items-center justify-center rounded-lg bg-neutral-50 p-1.5 hover:bg-rose-50"
+                    className={`flex items-center justify-center rounded-lg bg-neutral-50 p-1.5 hover:bg-rose-50 ${s.washi ? "h-12" : "aspect-square"}`}
                   >
                     <div style={{ width: s.ratio >= 1 ? "100%" : `${s.ratio * 100}%`, aspectRatio: String(s.ratio) }}>{s.draw(s.color)}</div>
                   </button>
