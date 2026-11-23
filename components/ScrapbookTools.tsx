@@ -1,7 +1,9 @@
 "use client";
 import { fonts, papers, textColors } from "@/lib/design";
-import type { Design, DesignItem, FontId, PaperId } from "@/lib/types";
+import type { Design, DesignItem, FontId, PaperId, TemplateId } from "@/lib/types";
+import { useState } from "react";
 import { stickerColors, stickerMap, stickers, type StickerDef } from "./stickers";
+import { tags } from "./tags";
 
 const groups: { id: StickerDef["group"]; name: string }[] = [
   { id: "tape", name: "Washi-Tape" },
@@ -16,6 +18,8 @@ interface Props {
   onPaper: (p: PaperId) => void;
   onAddSticker: (id: string) => void;
   onAddText: () => void;
+  onAddTag: (id: string) => void;
+  template?: TemplateId;
   onChangeSelected: (patch: Partial<DesignItem>) => void;
   onLayer: (dir: "vor" | "zurueck") => void;
   onDeleteSelected: () => void;
@@ -29,13 +33,16 @@ export default function ScrapbookTools(p: Props) {
   const sel = p.selected;
   const washi = sel?.kind === "sticker" ? stickerMap[sel.sticker ?? ""] : undefined;
   const isWashi = !!washi?.washi;
+  const [tab, setTab] = useState<"alle" | "weihnachten">(p.template === "weihnachten" ? "weihnachten" : "alle");
+  const fits = (a?: string) => tab === "alle" || a === tab;
+  const withText = sel?.kind === "text" || sel?.kind === "tag";
   return (
     <div className="space-y-6">
       {sel && (
         <section className="rounded-xl border border-rose-200 bg-rose-50/60 p-3">
           <div className="flex items-center justify-between">
             <span className={label}>
-              {sel.kind === "wish" ? "Wunsch" : sel.kind === "text" ? "Text" : "Sticker"} ausgewählt
+              {sel.kind === "wish" ? "Wunsch" : sel.kind === "text" ? "Text" : sel.kind === "tag" ? "Anhänger" : "Sticker"} ausgewählt
             </span>
             <div className="flex gap-1 text-sm">
               <button onClick={() => p.onLayer("vor")} className="rounded border border-neutral-300 bg-white px-2 py-0.5" title="Nach vorne holen">⬆ vorne</button>
@@ -45,7 +52,7 @@ export default function ScrapbookTools(p: Props) {
               )}
             </div>
           </div>
-          {sel.kind === "text" && (
+          {withText && (
             <>
               <textarea
                 value={sel.text ?? ""}
@@ -81,7 +88,7 @@ export default function ScrapbookTools(p: Props) {
           )}
           {sel.kind !== "wish" && !isWashi && (
             <div className="mt-2 flex flex-wrap gap-1.5">
-              {(sel.kind === "text" ? textColors : stickerColors).map((c) => (
+              {(withText ? textColors : stickerColors).map((c) => (
                 <button
                   key={c}
                   onClick={() => p.onChangeSelected({ color: c })}
@@ -99,10 +106,19 @@ export default function ScrapbookTools(p: Props) {
         </section>
       )}
 
+      <div className="flex gap-1 rounded-full bg-neutral-100 p-1 text-sm">
+        {([["alle", "Alle"], ["weihnachten", "🎄 Weihnachten"]] as const).map(([id, name]) => (
+          <button key={id} onClick={() => setTab(id)}
+            className={`flex-1 rounded-full px-3 py-1 ${tab === id ? "bg-white font-semibold shadow-sm" : "text-neutral-600"}`}>
+            {name}
+          </button>
+        ))}
+      </div>
+
       <section>
         <span className={label}>Papier</span>
         <div className="mt-2 grid grid-cols-4 gap-2">
-          {papers.map((pa) => (
+          {papers.filter((pa) => fits(pa.anlass)).map((pa) => (
             <button
               key={pa.id}
               onClick={() => p.onPaper(pa.id)}
@@ -122,12 +138,23 @@ export default function ScrapbookTools(p: Props) {
             + Text
           </button>
         </div>
-        {groups.map((g) => (
+        <div className="mt-3">
+          <div className="text-xs text-neutral-500">Geschenkanhänger zum Beschriften</div>
+          <div className="mt-1 grid grid-cols-4 gap-1.5">
+            {tags.map((t) => (
+              <button key={t.id} onClick={() => p.onAddTag(t.id)} title={t.name}
+                className="flex h-14 items-center justify-center rounded-lg bg-neutral-50 p-1.5 hover:bg-rose-50">
+                <div style={{ height: "100%", aspectRatio: String(t.ratio), maxWidth: "100%" }}>{t.draw(`p${t.id.replace(/-/g, "")}`)}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+        {groups.map((g) => stickers.some((s) => s.group === g.id && fits(s.anlass)) && (
           <div key={g.id} className="mt-3">
             <div className="text-xs text-neutral-500">{g.name}</div>
             <div className={`mt-1 grid gap-1.5 ${g.id === "tape" ? "grid-cols-2" : "grid-cols-6"}`}>
               {stickers
-                .filter((s) => s.group === g.id)
+                .filter((s) => s.group === g.id && fits(s.anlass))
                 .map((s) => (
                   <button
                     key={s.id}

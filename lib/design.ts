@@ -5,7 +5,7 @@ export const PAGE_W = 1000;
 export const PAGE_H = 1400;
 export const WISH_W = 250;
 
-export const papers: { id: PaperId; name: string; style: React.CSSProperties; dark?: boolean }[] = [
+export const papers: { id: PaperId; name: string; style: React.CSSProperties; dark?: boolean; anlass?: "weihnachten" }[] = [
   {
     id: "creme",
     name: "Creme",
@@ -84,6 +84,61 @@ export const papers: { id: PaperId; name: string; style: React.CSSProperties; da
   },
 ];
 
+papers.push(
+  {
+    id: "tartan", name: "Schottenkaro", anlass: "weihnachten",
+    style: {
+      backgroundColor: "#8e2f2a",
+      backgroundImage:
+        "repeating-linear-gradient(90deg, rgba(36,64,46,.55) 0 60px, transparent 60px 120px), repeating-linear-gradient(0deg, rgba(36,64,46,.55) 0 60px, transparent 60px 120px), repeating-linear-gradient(90deg, transparent 0 27px, rgba(233,196,106,.5) 27px 30px, transparent 30px 60px), repeating-linear-gradient(0deg, transparent 0 27px, rgba(233,196,106,.5) 27px 30px, transparent 30px 60px)",
+    },
+    dark: true,
+  },
+  {
+    id: "vichyrot", name: "Vichy Rot", anlass: "weihnachten",
+    style: {
+      backgroundColor: "#fbf6ec",
+      backgroundImage: "linear-gradient(90deg, rgba(168,50,42,.28) 50%, transparent 50%), linear-gradient(rgba(168,50,42,.28) 50%, transparent 50%)",
+      backgroundSize: "56px 56px",
+    },
+  },
+  {
+    id: "zuckerstange", name: "Zuckerstange", anlass: "weihnachten",
+    style: {
+      backgroundColor: "#fbf4e8",
+      backgroundImage: "repeating-linear-gradient(-45deg, rgba(168,50,42,.18) 0 22px, transparent 22px 64px)",
+    },
+  },
+  {
+    id: "schneekraft", name: "Kraft mit Schnee", anlass: "weihnachten",
+    style: {
+      backgroundColor: "#c39a6b",
+      backgroundImage:
+        "radial-gradient(rgba(255,255,255,.85) 2.5px, transparent 3px), radial-gradient(rgba(255,255,255,.55) 1.5px, transparent 2px), radial-gradient(rgba(90,60,30,.12) 1px, transparent 1.5px)",
+      backgroundSize: "80px 80px, 43px 43px, 7px 7px",
+      backgroundPosition: "0 0, 21px 17px, 0 0",
+    },
+  },
+  {
+    id: "schneecreme", name: "Creme mit Flocken", anlass: "weihnachten",
+    style: {
+      backgroundColor: "#f8f2e6",
+      backgroundImage:
+        "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><g stroke='%2390a4b8' stroke-width='1.6' stroke-linecap='round' opacity='.45'><path d='M30 18v24M18 30h24M21.5 21.5l17 17M38.5 21.5l-17 17'/><path d='M90 78v18M81 87h18M84 81l12 12M96 81l-12 12'/></g></svg>\")",
+      backgroundSize: "120px 120px",
+    },
+  },
+  {
+    id: "goldpunkte", name: "Tanne & Gold", anlass: "weihnachten", dark: true,
+    style: {
+      backgroundColor: "#2f4a3a",
+      backgroundImage: "radial-gradient(rgba(233,196,106,.75) 2px, transparent 2.5px), radial-gradient(rgba(233,196,106,.35) 1.2px, transparent 1.7px)",
+      backgroundSize: "60px 60px, 31px 31px",
+      backgroundPosition: "0 0, 15px 11px",
+    },
+  },
+);
+
 export const paperMap = Object.fromEntries(papers.map((p) => [p.id, p])) as Record<PaperId, (typeof papers)[number]>;
 
 export const fonts: { id: FontId; name: string; family: string; size: number }[] = [
@@ -92,6 +147,10 @@ export const fonts: { id: FontId; name: string; family: string; size: number }[]
   { id: "schreib", name: "Schreibschrift", family: "var(--font-script), cursive", size: 1.1 },
   { id: "serif", name: "Elegant", family: "var(--font-cormorant), serif", size: 0.8 },
   { id: "rund", name: "Verspielt", family: "var(--font-fredoka), sans-serif", size: 0.8 },
+  { id: "weihnacht", name: "Weihnachtlich", family: "var(--font-xmas), cursive", size: 0.85 },
+  { id: "schreibmaschine", name: "Schreibmaschine", family: "var(--font-typewriter), monospace", size: 0.7 },
+  { id: "feder", name: "Feder", family: "var(--font-feder), cursive", size: 0.6 },
+  { id: "amatic", name: "Kreide", family: "var(--font-amatic), sans-serif", size: 1.15 },
 ];
 
 export const fontMap = Object.fromEntries(fonts.map((f) => [f.id, f])) as Record<FontId, (typeof fonts)[number]>;

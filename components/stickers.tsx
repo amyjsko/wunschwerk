@@ -14,6 +14,8 @@ export interface StickerDef {
   washi?: string;
   /** Standarddicke bei Washi-Tape */
   h?: number;
+  /** Passt besonders zu diesem Anlass */
+  anlass?: "weihnachten";
   draw: (c: string) => React.ReactNode;
 }
 
@@ -56,7 +58,7 @@ export const stickers: StickerDef[] = [
     ),
   },
   {
-    id: "stern", name: "Stern", ratio: 1, w: 90, color: "#f2c14e", group: "deko",
+    id: "stern", anlass: "weihnachten", name: "Stern", ratio: 1, w: 90, color: "#f2c14e", group: "deko",
     draw: (c) => (
       <svg viewBox="0 0 100 100" width="100%" height="100%">
         <path d="M50 6 L61 37 L94 38 L68 58 L78 91 L50 72 L22 91 L32 58 L6 38 L39 37 Z" fill={c} stroke={ink} strokeWidth="2.5" strokeLinejoin="round" />
@@ -226,7 +228,7 @@ export const stickers: StickerDef[] = [
 
   // Anlässe
   {
-    id: "geschenk", name: "Geschenk", ratio: 1, w: 100, color: "#e8577a", group: "anlass",
+    id: "geschenk", anlass: "weihnachten", name: "Geschenk", ratio: 1, w: 100, color: "#e8577a", group: "anlass",
     draw: (c) => (
       <svg viewBox="0 0 100 100" width="100%" height="100%">
         <rect x="12" y="40" width="76" height="54" rx="4" fill={c} stroke={ink} strokeWidth="2.5" />
@@ -237,7 +239,7 @@ export const stickers: StickerDef[] = [
     ),
   },
   {
-    id: "schneeflocke", name: "Schneeflocke", ratio: 1, w: 80, color: "#9cc7e8", group: "anlass",
+    id: "schneeflocke", anlass: "weihnachten", name: "Schneeflocke", ratio: 1, w: 80, color: "#9cc7e8", group: "anlass",
     draw: (c) => (
       <svg viewBox="0 0 100 100" width="100%" height="100%">
         {[0, 60, 120].map((a) => (
@@ -250,7 +252,7 @@ export const stickers: StickerDef[] = [
     ),
   },
   {
-    id: "tannenbaum", name: "Tannenbaum", ratio: 0.8, w: 90, color: "#4f8a5b", group: "anlass",
+    id: "tannenbaum", anlass: "weihnachten", name: "Tannenbaum", ratio: 0.8, w: 90, color: "#4f8a5b", group: "anlass",
     draw: (c) => (
       <svg viewBox="0 0 80 100" width="100%" height="100%">
         <path d="M40 4 L58 32 L50 32 L68 58 L58 58 L76 84 L4 84 L22 58 L12 58 L30 32 L22 32 Z" fill={c} stroke={ink} strokeWidth="2.5" strokeLinejoin="round" />
@@ -298,6 +300,13 @@ export const stickers: StickerDef[] = [
     ),
   },
 ];
+
+/** Eigene Bild-Sticker (PNG in /public/sticker). Neue Bilder einfach hier eintragen. */
+function png(file: string) {
+  // eslint-disable-next-line @next/next/no-img-element
+  return () => <img src={`/sticker/${file}`} alt="" draggable={false} style={{ width: "100%", height: "100%", objectFit: "contain" }} />;
+}
+void png;
 
 export const stickerMap: Record<string, StickerDef> = Object.fromEntries(stickers.map((s) => [s.id, s]));
 // Alte Tape-Sticker zeigen jetzt auf die neuen Washi-Tapes

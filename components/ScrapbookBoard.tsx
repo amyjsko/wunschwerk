@@ -4,6 +4,7 @@ import { fontMap, PAGE_H, PAGE_W, paperMap } from "@/lib/design";
 import { formatPrice } from "@/lib/format";
 import type { Design, DesignItem, Wish } from "@/lib/types";
 import { stickerMap, WashiTape } from "./stickers";
+import { GiftTag } from "./tags";
 
 export interface ReserveProps {
   reserved: Record<string, string>;
@@ -194,6 +195,7 @@ function renderItem(item: DesignItem, wishById: Record<string, Wish>, reserve: R
       </div>
     );
   }
+  if (item.kind === "tag") return <GiftTag item={item} />;
   if (item.kind === "text") {
     const f = fontMap[item.font ?? "hand"] ?? fontMap.hand;
     return (

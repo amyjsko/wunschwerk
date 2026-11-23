@@ -49,12 +49,14 @@ export interface SharedList extends Pick<WishList, "title" | "subtitle" | "templ
   reservations?: Reservation[];
 }
 
-export type PaperId = "creme" | "kariert" | "punkte" | "liniert" | "kraft" | "rosa" | "salbei" | "nacht";
-export type FontId = "hand" | "marker" | "schreib" | "serif" | "rund";
+export type PaperId =
+  | "creme" | "kariert" | "punkte" | "liniert" | "kraft" | "rosa" | "salbei" | "nacht"
+  | "tartan" | "zuckerstange" | "schneekraft" | "schneecreme" | "goldpunkte" | "vichyrot";
+export type FontId = "hand" | "marker" | "schreib" | "serif" | "rund" | "weihnacht" | "schreibmaschine" | "feder" | "amatic";
 
 export interface DesignItem {
   id: string;
-  kind: "wish" | "sticker" | "text";
+  kind: "wish" | "sticker" | "text" | "tag";
   /** Mittelpunkt auf der Seite (Seite ist 1000 × 1400) */
   x: number;
   y: number;

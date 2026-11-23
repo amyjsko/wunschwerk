@@ -231,6 +231,8 @@ export default function EditorPage() {
                 addItem({ kind: "sticker", sticker: sid, w: def?.w ?? 100, ...(def?.washi ? { h: def.h } : {}) });
               }}
               onAddText={() => addItem({ kind: "text", text: "Dein Text", font: "hand", w: 280 })}
+              onAddTag={(tid) => addItem({ kind: "tag", sticker: tid, text: "Für …", font: "hand", w: tid === "anh-rund" ? 170 : 240 })}
+              template={list.template}
               onChangeSelected={(patch) => selectedId && changeItem(selectedId, patch)}
               onLayer={layer}
               onDeleteSelected={deleteSelected}
