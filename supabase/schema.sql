@@ -29,6 +29,9 @@ create table if not exists public.reservations (
   unique (list_id, wish_id)
 );
 
+-- Scrapbook-Gestaltung (seit Version 3)
+alter table public.lists add column if not exists design jsonb;
+
 alter table public.lists enable row level security;
 alter table public.reservations enable row level security;
 
@@ -70,7 +73,9 @@ begin
     'subtitle', l.subtitle,
     'template', l.template,
     'layout', l.layout,
-    'wishes', l.wishes,
+    'wishes', coalesce((select jsonb_agg(w) from jsonb_array_elements(l.wishes) w
+                         where coalesce((w->>'hidden')::boolean, false) = false), '[]'::jsonb),
+    'design', l.design,
     'is_owner', is_owner,
     'reservations', case when is_owner then '[]'::json else coalesce(
       (select json_agg(json_build_object('wish_id', r.wish_id, 'name', r.name))

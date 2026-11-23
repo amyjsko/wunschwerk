@@ -16,6 +16,7 @@ interface Row {
   template: WishList["template"];
   layout: WishList["layout"];
   wishes: WishList["wishes"];
+  design?: WishList["design"];
   created_at: string;
   updated_at: string;
 }
@@ -28,6 +29,7 @@ const fromRow = (r: Row): WishList => ({
   template: r.template,
   layout: r.layout,
   wishes: r.wishes ?? [],
+  design: r.design ?? null,
   createdAt: Date.parse(r.created_at),
   updatedAt: Date.parse(r.updated_at),
 });
@@ -38,6 +40,8 @@ const toRow = (l: WishList) => ({
   template: l.template,
   layout: l.layout,
   wishes: l.wishes,
+  // Erst mitschicken, wenn es eine Gestaltung gibt, damit ältere Datenbanken weiter funktionieren
+  ...(l.design ? { design: l.design } : {}),
   updated_at: new Date().toISOString(),
 });
 
@@ -104,7 +108,8 @@ export async function importLocalLists(session: Session): Promise<number> {
 export async function getSharedList(slug: string): Promise<SharedList | null> {
   const { data, error } = await supabase().rpc("get_shared_list", { p_slug: slug });
   if (error) throw error;
-  return (data as SharedList | null) ?? null;
+  const list = (data as SharedList | null) ?? null;
+  return list && { ...list, wishes: (list.wishes ?? []).filter((w) => !w.hidden) };
 }
 
 export async function reserveWish(slug: string, wishId: string, name: string): Promise<string> {
