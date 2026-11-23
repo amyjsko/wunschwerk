@@ -2,37 +2,55 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { deleteList, loadLists, upsertList } from "@/lib/storage";
+import AccountBar from "@/components/AccountBar";
+import { useSession } from "@/lib/auth";
+import { loadLists } from "@/lib/storage";
+import { createList, importLocalLists, listLists, removeList } from "@/lib/store";
+import { cloudEnabled } from "@/lib/supabase";
 import { templateList } from "@/lib/templates";
 import { uid } from "@/lib/format";
 import type { TemplateId, WishList } from "@/lib/types";
 
 export default function Home() {
   const router = useRouter();
+  const session = useSession();
   const [lists, setLists] = useState<WishList[]>([]);
+  const [localCount, setLocalCount] = useState(0);
+  const [busy, setBusy] = useState(false);
 
-  useEffect(() => setLists(loadLists()), []);
+  async function refresh() {
+    if (session === undefined) return;
+    setLists(await listLists(session).catch(() => []));
+    setLocalCount(session ? loadLists().length : 0);
+  }
 
-  function create(template: TemplateId) {
+  useEffect(() => {
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
+
+  async function create(template: TemplateId) {
+    if (session === undefined || busy) return;
+    setBusy(true);
     const t = templateList.find((x) => x.id === template)!;
     const now = Date.now();
-    const list: WishList = {
-      id: uid(),
-      title: t.defaultTitle,
-      subtitle: "",
-      template,
-      layout: "raster",
-      wishes: [],
-      createdAt: now,
-      updatedAt: now,
-    };
-    upsertList(list);
-    router.push(`/liste/${list.id}`);
+    try {
+      const list = await createList(session, {
+        id: uid(), title: t.defaultTitle, subtitle: "", template, layout: "raster", wishes: [], createdAt: now, updatedAt: now,
+      });
+      router.push(`/liste/${list.id}`);
+    } catch (err) {
+      setBusy(false);
+      const msg = (err as { message?: string })?.message ?? String(err);
+      console.error("createList", err);
+      alert(`Der Wunschzettel konnte nicht angelegt werden. Bitte versuch es noch einmal.\n\n(${msg})`);
+    }
   }
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-12 sm:py-20">
-      <section className="text-center">
+    <main className="mx-auto max-w-5xl px-4 py-6 sm:py-8">
+      <AccountBar session={session} />
+      <section className="mt-6 text-center sm:mt-10">
         <p className="text-sm font-semibold uppercase tracking-widest text-rose-600">Wunschwerk</p>
         <h1 className="mt-3 font-serif text-4xl sm:text-6xl">Wünsche sammeln, schön gestalten, teilen.</h1>
         <p className="mx-auto mt-5 max-w-2xl text-lg text-neutral-600">
@@ -41,16 +59,38 @@ export default function Home() {
         </p>
       </section>
 
-      <section className="mt-14">
+      {cloudEnabled && session === null && (
+        <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-rose-200 bg-rose-50 p-4 text-center text-sm">
+          <Link href="/anmelden" className="font-semibold text-rose-700 underline">Melde dich an</Link>, damit deine
+          Wunschzettel auf allen Geräten da sind und Gäste Geschenke reservieren können.
+        </div>
+      )}
+
+      {session && localCount > 0 && (
+        <div className="mx-auto mt-8 flex max-w-2xl flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm">
+          <span>In diesem Browser liegen noch {localCount} {localCount === 1 ? "Wunschzettel" : "Wunschzettel"} ohne Konto.</span>
+          <button
+            onClick={async () => {
+              setBusy(true);
+              await importLocalLists(session).catch(() => alert("Das Übernehmen hat nicht ganz geklappt."));
+              setBusy(false);
+              refresh();
+            }}
+            disabled={busy}
+            className="rounded-full bg-neutral-900 px-4 py-1.5 font-semibold text-white disabled:opacity-50"
+          >
+            In mein Konto übernehmen
+          </button>
+        </div>
+      )}
+
+      <section className="mt-12">
         <h2 className="text-xl font-semibold">Neuer Wunschzettel</h2>
         <p className="text-neutral-600">Wähle einen Anlass. Die Vorlage kannst du später jederzeit wechseln.</p>
         <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
           {templateList.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => create(t.id)}
-              className="group rounded-2xl border border-neutral-200 bg-white p-3 text-left transition hover:-translate-y-0.5 hover:shadow-lg"
-            >
+            <button key={t.id} onClick={() => create(t.id)} disabled={busy || session === undefined}
+              className="group rounded-2xl border border-neutral-200 bg-white p-3 text-left transition hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-60">
               <div className={`h-28 rounded-xl border-4 ${t.swatch} flex items-center justify-center text-3xl`}>
                 {t.decoration[2] ?? "✎"}
               </div>
@@ -75,10 +115,10 @@ export default function Home() {
                   </div>
                 </Link>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     if (!window.confirm(`„${l.title}“ löschen?`)) return;
-                    deleteList(l.id);
-                    setLists(loadLists());
+                    await removeList(l).catch(() => alert("Löschen hat nicht geklappt."));
+                    refresh();
                   }}
                   className="text-sm text-neutral-400 hover:text-red-600"
                 >
@@ -87,7 +127,9 @@ export default function Home() {
               </li>
             ))}
           </ul>
-          <p className="mt-2 text-xs text-neutral-400">Im Prototyp werden deine Wunschzettel nur in diesem Browser gespeichert.</p>
+          {!session && (
+            <p className="mt-2 text-xs text-neutral-400">Ohne Anmeldung werden deine Wunschzettel nur in diesem Browser gespeichert.</p>
+          )}
         </section>
       )}
     </main>

@@ -8,7 +8,8 @@ export default function ShareDialog({ list, onClose }: { list: WishList; onClose
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    encodeList(list).then((code) => setLink(`${window.location.origin}/teilen#d=${code}`));
+    if (list.slug) setLink(`${window.location.origin}/w/${list.slug}`);
+    else encodeList(list).then((code) => setLink(`${window.location.origin}/teilen#d=${code}`));
   }, [list]);
 
   async function copy() {
@@ -26,7 +27,9 @@ export default function ShareDialog({ list, onClose }: { list: WishList; onClose
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-xl font-semibold">Wunschzettel teilen</h2>
         <p className="mt-1 text-sm text-neutral-600">
-          Jeder mit diesem Link sieht deinen Wunschzettel, ganz ohne Konto. Änderungen, die du später machst, brauchen einen neuen Link.
+          {list.slug
+            ? "Jeder mit diesem Link sieht deinen Wunschzettel, ganz ohne Konto, und kann Geschenke reservieren. Du siehst nicht, was reserviert ist. Änderungen sind sofort für alle sichtbar."
+            : "Jeder mit diesem Link sieht deinen Wunschzettel, ganz ohne Konto. Änderungen, die du später machst, brauchen einen neuen Link. Melde dich an, damit Gäste reservieren können."}
         </p>
         <div className="mt-4 flex gap-2">
           <input readOnly value={link || "Link wird erstellt…"} onFocus={(e) => e.target.select()}

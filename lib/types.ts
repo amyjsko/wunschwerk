@@ -16,6 +16,8 @@ export interface Wish {
 
 export interface WishList {
   id: string;
+  /** Kurzer Teilen-Link (/w/slug), nur bei Listen im Konto */
+  slug?: string;
   title: string;
   subtitle: string;
   template: TemplateId;
@@ -31,4 +33,14 @@ export interface ProductPreview {
   price?: number;
   currency?: string;
   shop?: string;
+}
+
+export interface Reservation {
+  wish_id: string;
+  name: string;
+}
+
+export interface SharedList extends Pick<WishList, "title" | "subtitle" | "template" | "layout" | "wishes"> {
+  is_owner?: boolean;
+  reservations?: Reservation[];
 }

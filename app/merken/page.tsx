@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { decodeCaptured, type Captured } from "@/lib/bookmarklet";
 import { parsePrice } from "@/lib/extract";
-import { loadLists, upsertList } from "@/lib/storage";
+import { useSession } from "@/lib/auth";
+import { createList, listLists, saveList } from "@/lib/store";
 import { templates } from "@/lib/templates";
 import { uid } from "@/lib/format";
 import type { WishList } from "@/lib/types";
@@ -14,16 +15,25 @@ export default function MerkenPage() {
   const [item, setItem] = useState<Captured | null | undefined>(undefined);
   const [lists, setLists] = useState<WishList[]>([]);
   const [target, setTarget] = useState("neu");
+  const [busy, setBusy] = useState(false);
+  const session = useSession();
 
   useEffect(() => {
     const c = decodeCaptured(window.location.hash);
     setItem(c ? { ...c, price: c.price ? String(parsePrice(c.price) ?? "").replace(".", ",") : "" } : null);
-    const ls = loadLists();
-    setLists(ls);
-    if (ls[0]) setTarget(ls[0].id);
   }, []);
 
-  if (item === undefined) return null;
+  useEffect(() => {
+    if (session === undefined) return;
+    listLists(session)
+      .then((ls) => {
+        setLists(ls);
+        if (ls[0]) setTarget(ls[0].id);
+      })
+      .catch(() => {});
+  }, [session]);
+
+  if (item === undefined || session === undefined) return null;
   if (item === null)
     return (
       <main className="py-24 text-center">
@@ -32,11 +42,14 @@ export default function MerkenPage() {
       </main>
     );
 
-  function save() {
-    if (!item?.title?.trim()) return;
+  async function save() {
+    if (!item?.title?.trim() || session === undefined) return;
+    setBusy(true);
+    try {
     const now = Date.now();
     const list: WishList =
-      lists.find((l) => l.id === target) ?? {
+      lists.find((l) => l.id === target) ??
+      (await createList(session, {
         id: uid(),
         title: templates.weihnachten.defaultTitle,
         subtitle: "",
@@ -45,8 +58,8 @@ export default function MerkenPage() {
         wishes: [],
         createdAt: now,
         updatedAt: now,
-      };
-    upsertList({
+      }));
+    await saveList({
       ...list,
       updatedAt: now,
       wishes: [
@@ -64,6 +77,10 @@ export default function MerkenPage() {
       ],
     });
     router.push(`/liste/${list.id}`);
+    } catch {
+      setBusy(false);
+      alert("Das Merken hat nicht geklappt. Bitte versuch es noch einmal.");
+    }
   }
 
   return (
@@ -95,9 +112,9 @@ export default function MerkenPage() {
             <option value="neu">+ Neuer Wunschzettel</option>
           </select>
         </label>
-        <button onClick={save} disabled={!item.title?.trim()}
+        <button onClick={save} disabled={busy || !item.title?.trim()}
           className="w-full rounded-full bg-rose-600 py-2 font-semibold text-white disabled:opacity-40">
-          Merken
+          {busy ? "Wird gemerkt…" : "Merken"}
         </button>
       </div>
     </main>
