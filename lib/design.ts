@@ -90,15 +90,16 @@ export const fonts: { id: FontId; name: string; family: string; size: number }[]
   { id: "hand", name: "Handschrift", family: "var(--font-hand), cursive", size: 1 },
   { id: "marker", name: "Marker", family: "var(--font-marker), cursive", size: 0.9 },
   { id: "schreib", name: "Schreibschrift", family: "var(--font-script), cursive", size: 1.1 },
-  { id: "serif", name: "Elegant", family: "var(--font-playfair), serif", size: 0.8 },
+  { id: "serif", name: "Elegant", family: "var(--font-cormorant), serif", size: 0.8 },
   { id: "rund", name: "Verspielt", family: "var(--font-fredoka), sans-serif", size: 0.8 },
 ];
 
 export const fontMap = Object.fromEntries(fonts.map((f) => [f.id, f])) as Record<FontId, (typeof fonts)[number]>;
 
-export const textColors = ["#3b2f2a", "#e8577a", "#c8102e", "#2b6cb0", "#4f8a5b", "#8a6d3b", "#7a5d99", "#ffffff"];
+export const textColors = ["#3b2f2a", "#b5573b", "#7d8b63", "#e3a993", "#e8577a", "#c8102e", "#2b6cb0", "#4f8a5b", "#8a6d3b", "#7a5d99", "#ffffff"];
 
 const templatePaper: Record<TemplateId, PaperId> = {
+  journal: "creme",
   weihnachten: "nacht",
   geburtstag: "rosa",
   hochzeit: "creme",
@@ -106,6 +107,7 @@ const templatePaper: Record<TemplateId, PaperId> = {
 };
 
 const templateStickers: Record<TemplateId, string[]> = {
+  journal: ["zweig", "funkeln", "herzchen", "blume", "zweig"],
   weihnachten: ["tannenbaum", "schneeflocke", "stern", "geschenk", "funkeln"],
   geburtstag: ["ballon", "torte", "funkeln", "herz", "ballon"],
   hochzeit: ["ringe", "zweig", "gaensebluemchen", "herzchen", "zweig"],
@@ -140,7 +142,7 @@ export function createDesign(list: Pick<WishList, "title" | "subtitle" | "templa
       id: uid(), kind: "text", text: list.subtitle, font: "hand",
       x: 500, y: 265, w: 300, rot: 1, z: z++, color: dark ? "#e8dcc4" : "#7a6a5e",
     });
-  items.push({ id: uid(), kind: "sticker", sticker: "unterstrich", x: 500, y: 215, w: 300, rot: 0, z: z++, color: "#e8577a" });
+  items.push({ id: uid(), kind: "sticker", sticker: "unterstrich", x: 500, y: 215, w: 300, rot: 0, z: z++, color: "#b5573b" });
 
   list.wishes.forEach((w, i) => {
     const slot = wishSlot(i);

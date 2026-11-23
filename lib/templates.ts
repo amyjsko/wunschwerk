@@ -14,9 +14,29 @@ export interface Template {
   accent: string;
   decoration: string[];
   swatch: string;
+  /** Wünsche als schräge Polaroids mit Washi-Tape darstellen */
+  polaroid?: boolean;
+  /** Washi-Tapes (Dateinamen in public/deko/washi), werden reihum verwendet */
+  washi?: string[];
 }
 
 export const templates: Record<TemplateId, Template> = {
+  journal: {
+    id: "journal",
+    name: "Journal",
+    defaultTitle: "Meine Wünsche",
+    sheet: "bg-[#fbf7f0] text-[#3d322a] ring-1 ring-[#e8dccb]",
+    heading: "font-serif text-5xl sm:text-6xl font-medium tracking-wide text-[#3d322a]",
+    subtitle: "font-hand text-2xl text-[#b5573b]",
+    card: "",
+    cardTitle: "font-serif text-base sm:text-lg font-semibold",
+    price: "font-hand text-2xl text-[#b5573b]",
+    accent: "text-[#b5573b]",
+    decoration: [],
+    swatch: "bg-[#fbf7f0] border-[#e3a993]",
+    polaroid: true,
+    washi: ["gingham", "botanical", "blush", "stripes"],
+  },
   weihnachten: {
     id: "weihnachten",
     name: "Weihnachten",
@@ -53,11 +73,13 @@ export const templates: Record<TemplateId, Template> = {
     heading: "font-serif text-5xl tracking-wide text-[#8a6d3b]",
     subtitle: "font-serif italic text-[#8c7f72]",
     card: "bg-white/80 rounded-none border border-[#d8c7a3] shadow-sm",
-    cardTitle: "font-serif text-lg",
-    price: "text-[#8a6d3b]",
+    cardTitle: "font-serif text-lg font-semibold",
+    price: "font-hand text-2xl text-[#8a6d3b]",
     accent: "text-[#b8955a]",
     decoration: ["❦", "✿", "❧", "✿"],
     swatch: "bg-[#f7f2ea] border-[#b8955a]",
+    polaroid: true,
+    washi: ["stripes", "botanical", "blush"],
   },
   minimal: {
     id: "minimal",

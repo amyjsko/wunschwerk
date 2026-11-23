@@ -1,4 +1,4 @@
-export type TemplateId = "weihnachten" | "geburtstag" | "hochzeit" | "minimal";
+export type TemplateId = "journal" | "weihnachten" | "geburtstag" | "hochzeit" | "minimal";
 export type LayoutId = "raster" | "liste";
 
 export interface Wish {

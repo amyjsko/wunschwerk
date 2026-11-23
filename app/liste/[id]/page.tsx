@@ -242,7 +242,7 @@ export default function EditorPage() {
 
         <section className={`mt-6 ${scrap ? "hidden" : ""}`}>
           <span className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Vorlage</span>
-          <div className="mt-2 grid grid-cols-4 gap-2">
+          <div className="mt-2 grid grid-cols-5 gap-1.5">
             {templateList.map((t) => (
               <button key={t.id} onClick={() => update({ template: t.id })}
                 className={`rounded-lg p-1 text-xs ${list.template === t.id ? "ring-2 ring-rose-600" : "ring-1 ring-neutral-200"}`}>

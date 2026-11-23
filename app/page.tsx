@@ -89,12 +89,17 @@ export default function Home() {
       <section className="mt-12">
         <h2 className="text-xl font-semibold">Neuer Wunschzettel</h2>
         <p className="text-neutral-600">Wähle einen Anlass. Die Vorlage kannst du später jederzeit wechseln.</p>
-        <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
           {templateList.map((t) => (
             <button key={t.id} onClick={() => create(t.id)} disabled={busy || session === undefined}
               className="group rounded-2xl border border-neutral-200 bg-white p-3 text-left transition hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-60">
               <div className={`h-28 rounded-xl border-4 ${t.swatch} flex items-center justify-center text-3xl`}>
-                {t.decoration[2] ?? "✎"}
+                {t.decoration[2] ??
+                  (t.washi ? (
+                    <span className="washi w-24 -rotate-6" style={{ "--washi": `url(/deko/washi/${t.washi[0]}.png)` } as React.CSSProperties} />
+                  ) : (
+                    "✎"
+                  ))}
               </div>
               <div className="mt-3 font-semibold">{t.name}</div>
               <div className="text-sm text-neutral-500 group-hover:text-rose-600">Erstellen →</div>

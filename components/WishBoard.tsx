@@ -2,7 +2,10 @@ import { templates } from "@/lib/templates";
 import { formatPrice } from "@/lib/format";
 import type { Wish, WishList } from "@/lib/types";
 
-type BoardList = Pick<WishList, "title" | "subtitle" | "template" | "layout" | "wishes">;
+/** Leicht unterschiedliche Schräglagen, damit die Polaroids wie hingelegt wirken */
+const TILTS = [-2, 1.5, -1, 2, -1.5, 1];
+
+type BoardList =Pick<WishList, "title" | "subtitle" | "template" | "layout" | "wishes">;
 
 interface ReserveProps {
   /** wish_id -> Name der Person, die reserviert hat */
@@ -45,13 +48,32 @@ export default function WishBoard({ list, reserve }: { list: BoardList; reserve?
       {list.wishes.length === 0 ? (
         <p className={`relative text-center opacity-70 ${t.subtitle}`}>Noch keine Wünsche. Füge links deinen ersten hinzu.</p>
       ) : (
-        <ul className={`relative ${grid ? "grid gap-5 grid-cols-2 lg:grid-cols-3" : "flex flex-col gap-4 max-w-2xl mx-auto"}`}>
-          {list.wishes.map((w) => {
+        <ul
+          className={`relative ${
+            grid
+              ? `grid grid-cols-2 lg:grid-cols-3 ${t.polaroid ? "gap-x-5 gap-y-10 sm:gap-x-8 pt-3" : "gap-5"}`
+              : `flex flex-col max-w-2xl mx-auto ${t.polaroid ? "gap-8 pt-3" : "gap-4"}`
+          }`}
+        >
+          {list.wishes.map((w, i) => {
             const price = formatPrice(w.price, w.currency);
             const Wrapper = w.url ? "a" : "div";
             const by = reserve?.reserved[w.id];
+            const tape = t.washi?.length ? t.washi[i % t.washi.length] : undefined;
+            const tilt = t.polaroid ? TILTS[i % TILTS.length] : 0;
             return (
-              <li key={w.id} className={`${t.card} flex flex-col overflow-hidden ${by ? "opacity-80" : ""}`}>
+              <li
+                key={w.id}
+                className={`${t.polaroid ? "polaroid relative" : `${t.card} overflow-hidden`} flex flex-col ${by ? "opacity-80" : ""}`}
+                style={t.polaroid ? ({ "--tilt": `${tilt}deg` } as React.CSSProperties) : undefined}
+              >
+                {tape && (
+                  <span
+                    aria-hidden
+                    className="washi pointer-events-none absolute -top-3.5 left-1/2 z-10 w-24 -translate-x-1/2"
+                    style={{ "--washi": `url(/deko/washi/${tape}.png)`, rotate: `${-tilt * 1.5 + (i % 2 ? 3 : -3)}deg` } as React.CSSProperties}
+                  />
+                )}
                 <Wrapper
                   {...(w.url ? { href: w.url, target: "_blank", rel: "noopener noreferrer" } : {})}
                   className={`flex flex-1 ${grid ? "flex-col" : "flex-row items-center"}`}
@@ -62,19 +84,19 @@ export default function WishBoard({ list, reserve }: { list: BoardList; reserve?
                       src={w.image}
                       alt=""
                       referrerPolicy="no-referrer"
-                      className={`${grid ? "aspect-square w-full" : "h-24 w-24 shrink-0"} object-contain bg-white p-2`}
+                      className={`${grid ? "aspect-square w-full" : "h-24 w-24 shrink-0"} object-contain bg-white p-2 ${t.polaroid ? "ring-1 ring-black/5" : ""}`}
                     />
                   ) : (
-                    <div className={`${grid ? "aspect-square w-full" : "h-24 w-24 shrink-0"} flex items-center justify-center text-4xl bg-black/5`}>
+                    <div className={`${grid ? "aspect-square w-full" : "h-24 w-24 shrink-0"} flex items-center justify-center text-4xl ${t.polaroid ? "bg-[#f3ebdf]" : "bg-black/5"}`}>
                       🎁
                     </div>
                   )}
-                  <div className="flex flex-1 flex-col gap-1 p-4">
+                  <div className={`flex flex-1 flex-col gap-1 ${t.polaroid ? "px-1.5 pt-3" : "p-4"}`}>
                     <div className={`text-sm ${t.accent}`} title="Wie sehr ich es mir wünsche">
                       {"♥".repeat(w.priority)}
                       <span className="opacity-25">{"♥".repeat(3 - w.priority)}</span>
                     </div>
-                    <h3 className={`${t.cardTitle} leading-snug line-clamp-3`}>{w.title}</h3>
+                    <h3 className={`${t.cardTitle} leading-snug line-clamp-3 hyphens-auto [overflow-wrap:anywhere]`}>{w.title}</h3>
                     {w.note && <p className="text-sm opacity-75">{w.note}</p>}
                     <div className="mt-auto flex items-end justify-between gap-2 pt-2 text-sm">
                       {price ? <span className={t.price}>{price}</span> : <span />}
@@ -83,7 +105,7 @@ export default function WishBoard({ list, reserve }: { list: BoardList; reserve?
                   </div>
                 </Wrapper>
                 {reserve && (
-                  <div className="no-print px-4 pb-4">
+                  <div className={`no-print ${t.polaroid ? "px-1.5 pt-3" : "px-4 pb-4"}`}>
                     {by ? (
                       reserve.mine.has(w.id) ? (
                         <button onClick={() => reserve.onCancel(w)}
