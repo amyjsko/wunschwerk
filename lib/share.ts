@@ -32,7 +32,11 @@ export async function encodeList(list: WishList): Promise<string> {
     template: list.template,
     layout: list.layout,
     wishes: list.wishes.filter((w) => !w.hidden),
-    design: list.design,
+    // Eigene Bilder sind zu groß für den Link, Pins (nur ein Verweis) bleiben drin
+    design: list.design && {
+      ...list.design,
+      items: list.design.items.filter((i) => i.kind !== "image" || !i.src?.startsWith("data:")),
+    },
   };
   const json = new TextEncoder().encode(JSON.stringify(data));
   return toBase64Url(await pipe(json, new CompressionStream("deflate-raw")));

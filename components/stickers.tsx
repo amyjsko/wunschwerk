@@ -1,6 +1,10 @@
 /* Eigenes Sticker-Set im Scrapbook-Stil. Alles als SVG, damit es scharf bleibt
    und sich einfärben lässt. */
 
+import { extraStickers } from "./stickersExtra";
+
+export type Occasion = "weihnachten" | "alltag" | "geburtstag" | "hochzeit";
+
 export interface StickerDef {
   id: string;
   name: string;
@@ -9,7 +13,15 @@ export interface StickerDef {
   /** Standardbreite auf der Seite */
   w: number;
   color: string;
-  group: "tape" | "deko" | "doodle" | "anlass";
+  group: "tape" | "deko" | "doodle" | "zettel" | "anlass";
+  /** Für welche Anlässe der Sticker gedacht ist (ohne Angabe: Alltag) */
+  occasions?: Occasion[];
+  /** Gezeichnetes Washi-Tape (siehe VectorTape) */
+  tape?: string;
+  /** Lässt sich nicht umfärben */
+  fixedColor?: boolean;
+  /** Beschriftbar: Standardtext, Farbe, Ränder in % und Schriftgröße im Verhältnis zur Breite */
+  label?: { text: string; color: string; left?: number; top?: number; bottom?: number; size: number };
   /** Bild-Washi-Tape: Name der Dateien in /public/washi */
   washi?: string;
   /** Standarddicke bei Washi-Tape */
@@ -38,7 +50,7 @@ function washi(name: string) {
   return () => <img src={`/washi/${name}-preview.png`} alt="" draggable={false} style={{ width: "100%", height: "100%", objectFit: "contain" }} />;
 }
 
-export const stickers: StickerDef[] = [
+const baseStickers: StickerDef[] = [
   // Washi-Tape
   { id: "washi-streifen", name: "Washi-Tape Streifen", ratio: 4, w: 220, h: 42, color: "", group: "tape", washi: "streifen", draw: washi("streifen") },
   { id: "washi-karo", name: "Washi-Tape Vichy-Karo", ratio: 4, w: 220, h: 42, color: "", group: "tape", washi: "karo", draw: washi("karo") },
@@ -299,9 +311,27 @@ export const stickers: StickerDef[] = [
   },
 ];
 
+const baseOccasions: Record<string, Occasion[]> = {
+  geschenk: ["weihnachten", "geburtstag"], schneeflocke: ["weihnachten"], tannenbaum: ["weihnachten"],
+  ballon: ["geburtstag"], torte: ["geburtstag"], ringe: ["hochzeit"],
+  stern: ["weihnachten", "alltag"], funkeln: ["weihnachten", "alltag", "geburtstag", "hochzeit"], schleife: ["weihnachten", "alltag", "geburtstag"],
+  zweig: ["alltag", "hochzeit"], blume: ["alltag", "hochzeit"], gaensebluemchen: ["alltag", "hochzeit"], herz: ["alltag", "hochzeit", "geburtstag"],
+};
+
+export const stickers: StickerDef[] = [
+  ...baseStickers.map((s) => ({
+    ...s,
+    occasions: baseOccasions[s.id] ?? (["alltag"] as Occasion[]),
+    group: s.id === "notiz" || s.id === "etikett" ? ("zettel" as const) : s.group === "anlass" ? ("deko" as const) : s.group,
+  })),
+  ...extraStickers,
+];
+
+export const isTape = (s?: StickerDef) => !!(s?.washi || s?.tape);
+
 export const stickerMap: Record<string, StickerDef> = Object.fromEntries(stickers.map((s) => [s.id, s]));
 // Alte Tape-Sticker zeigen jetzt auf die neuen Washi-Tapes
 for (const [alt, neu] of [["tape-streifen", "washi-streifen"], ["tape-punkte", "washi-rosa"], ["tape-karo", "washi-karo"], ["tape-uni", "washi-ranke"]])
   stickerMap[alt] = stickerMap[neu];
 
-export const stickerColors = ["#e8577a", "#f4a7b9", "#f2c14e", "#f6d38b", "#a8d5c2", "#7fa77a", "#9cc7e8", "#b9c4f2", "#c9a7e8", "#d4a94e", "#3b2f2a", "#ffffff"];
+export const stickerColors = ["#e8577a", "#f4a7b9", "#f2c14e", "#f6d38b", "#a8d5c2", "#7fa77a", "#9cc7e8", "#b9c4f2", "#c9a7e8", "#d4a94e", "#b5573b", "#a3343c", "#8c2f35", "#48694f", "#2f5040", "#c8a67c", "#fbf3e4", "#3b2f2a", "#ffffff"];

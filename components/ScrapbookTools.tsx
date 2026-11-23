@@ -1,13 +1,23 @@
 "use client";
+import { useState } from "react";
+import ImageInsert from "./ImageInsert";
 import { fonts, papers, textColors } from "@/lib/design";
 import type { Design, DesignItem, FontId, PaperId } from "@/lib/types";
-import { stickerColors, stickerMap, stickers, type StickerDef } from "./stickers";
+import { isTape, stickerColors, stickerMap, stickers, type Occasion, type StickerDef } from "./stickers";
+
+const occasions: { id: Occasion | "alle"; name: string }[] = [
+  { id: "alle", name: "Alle" },
+  { id: "weihnachten", name: "Weihnachten" },
+  { id: "geburtstag", name: "Geburtstag" },
+  { id: "hochzeit", name: "Hochzeit" },
+  { id: "alltag", name: "Alltag" },
+];
 
 const groups: { id: StickerDef["group"]; name: string }[] = [
   { id: "tape", name: "Washi-Tape" },
   { id: "deko", name: "Deko" },
-  { id: "doodle", name: "Doodles & Zettel" },
-  { id: "anlass", name: "Anlässe" },
+  { id: "doodle", name: "Doodles" },
+  { id: "zettel", name: "Anhänger & Zettel" },
 ];
 
 interface Props {
@@ -16,6 +26,9 @@ interface Props {
   onPaper: (p: PaperId) => void;
   onAddSticker: (id: string) => void;
   onAddText: () => void;
+  onAddImage: (img: Pick<DesignItem, "src" | "ratio" | "frame" | "link" | "credit">) => string | null;
+  local: boolean;
+  startOccasion: Occasion | "alle";
   onChangeSelected: (patch: Partial<DesignItem>) => void;
   onLayer: (dir: "vor" | "zurueck") => void;
   onDeleteSelected: () => void;
@@ -28,14 +41,18 @@ const label = "text-xs font-semibold uppercase tracking-wide text-neutral-500";
 export default function ScrapbookTools(p: Props) {
   const sel = p.selected;
   const washi = sel?.kind === "sticker" ? stickerMap[sel.sticker ?? ""] : undefined;
-  const isWashi = !!washi?.washi;
+  const isWashi = isTape(washi);
+  const label_ = washi?.label;
+  const [occasion, setOccasion] = useState(p.startOccasion);
+  const [inserting, setInserting] = useState(false);
+  const shown = stickers.filter((s) => occasion === "alle" || s.occasions?.includes(occasion));
   return (
     <div className="space-y-6">
       {sel && (
         <section className="rounded-xl border border-rose-200 bg-rose-50/60 p-3">
           <div className="flex items-center justify-between">
             <span className={label}>
-              {sel.kind === "wish" ? "Wunsch" : sel.kind === "text" ? "Text" : "Sticker"} ausgewählt
+              {sel.kind === "wish" ? "Wunsch" : sel.kind === "text" ? "Text" : sel.kind === "image" ? "Bild" : "Sticker"} ausgewählt
             </span>
             <div className="flex gap-1 text-sm">
               <button onClick={() => p.onLayer("vor")} className="rounded border border-neutral-300 bg-white px-2 py-0.5" title="Nach vorne holen">⬆ vorne</button>
@@ -45,10 +62,11 @@ export default function ScrapbookTools(p: Props) {
               )}
             </div>
           </div>
-          {sel.kind === "text" && (
+          {(sel.kind === "text" || label_) && (
             <>
               <textarea
-                value={sel.text ?? ""}
+                aria-label="Text"
+                value={sel.text ?? label_?.text ?? ""}
                 rows={2}
                 onChange={(e) => p.onChangeSelected({ text: e.target.value })}
                 className="mt-2 w-full rounded border border-neutral-300 px-2 py-1 text-sm"
@@ -79,7 +97,16 @@ export default function ScrapbookTools(p: Props) {
               </label>
             </div>
           )}
-          {sel.kind !== "wish" && !isWashi && (
+          {sel.kind === "image" && !sel.credit && (
+            <div className="mt-2 flex flex-wrap gap-1 text-sm">
+              {(["ohne", "sticker", "polaroid"] as const).map((f) => (
+                <button key={f} onClick={() => p.onChangeSelected({ frame: f })} className={`rounded-full px-2.5 py-1 ${(sel.frame ?? "ohne") === f ? "bg-neutral-900 text-white" : "border border-neutral-300 bg-white"}`}>
+                  {f === "ohne" ? "Ohne Rahmen" : f === "sticker" ? "Sticker-Rand" : "Polaroid"}
+                </button>
+              ))}
+            </div>
+          )}
+          {sel.kind !== "wish" && sel.kind !== "image" && !isWashi && !washi?.fixedColor && (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {(sel.kind === "text" ? textColors : stickerColors).map((c) => (
                 <button
@@ -118,30 +145,42 @@ export default function ScrapbookTools(p: Props) {
       <section>
         <div className="flex items-center justify-between">
           <span className={label}>Sticker & Deko</span>
+          <div className="flex gap-1.5">
+          <button onClick={() => setInserting(true)} className="rounded-full border border-neutral-300 px-3 py-1 text-sm hover:bg-neutral-50">+ Bild</button>
           <button onClick={p.onAddText} className="rounded-full border border-neutral-300 px-3 py-1 text-sm hover:bg-neutral-50" style={{ fontFamily: "var(--font-hand), cursive" }}>
             + Text
           </button>
+          </div>
         </div>
-        {groups.map((g) => (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {occasions.map((o) => (
+            <button key={o.id} onClick={() => setOccasion(o.id)} aria-pressed={occasion === o.id} className={`rounded-full px-2.5 py-1 text-xs ${occasion === o.id ? "bg-neutral-900 text-white" : "bg-neutral-100 hover:bg-neutral-200"}`}>
+              {o.name}
+            </button>
+          ))}
+        </div>
+        {groups.filter((g) => shown.some((s) => s.group === g.id)).map((g) => (
           <div key={g.id} className="mt-3">
             <div className="text-xs text-neutral-500">{g.name}</div>
-            <div className={`mt-1 grid gap-1.5 ${g.id === "tape" ? "grid-cols-2" : "grid-cols-6"}`}>
-              {stickers
+            <div className={`mt-1 grid gap-1.5 ${g.id === "tape" ? "grid-cols-2" : g.id === "zettel" ? "grid-cols-4" : "grid-cols-6"}`}>
+              {shown
                 .filter((s) => s.group === g.id)
                 .map((s) => (
                   <button
                     key={s.id}
                     onClick={() => p.onAddSticker(s.id)}
                     title={s.name}
-                    className={`flex items-center justify-center rounded-lg bg-neutral-50 p-1.5 hover:bg-rose-50 ${s.washi ? "h-12" : "aspect-square"}`}
+                    className={`flex items-center justify-center rounded-lg bg-neutral-50 p-1.5 hover:bg-rose-50 ${isTape(s) ? "h-12" : "aspect-square"}`}
                   >
-                    <div style={{ width: s.ratio >= 1 ? "100%" : `${s.ratio * 100}%`, aspectRatio: String(s.ratio) }}>{s.draw(s.color)}</div>
+                    <div style={{ pointerEvents: "none", width: s.ratio >= 1 ? "100%" : `${s.ratio * 100}%`, aspectRatio: String(s.ratio) }}>{s.draw(s.color)}</div>
                   </button>
                 ))}
             </div>
           </div>
         ))}
       </section>
+
+      {inserting && <ImageInsert local={p.local} onInsert={p.onAddImage} onClose={() => setInserting(false)} />}
 
       <button
         onClick={p.onExport}
