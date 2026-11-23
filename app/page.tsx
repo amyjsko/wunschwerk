@@ -17,6 +17,8 @@ export default function Home() {
   const [lists, setLists] = useState<WishList[]>([]);
   const [localCount, setLocalCount] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [filter, setFilter] = useState<TemplateId | "alle">("alle");
+  const [sort, setSort] = useState<"neu" | "name" | "wuensche">("neu");
 
   async function refresh() {
     if (session === undefined) return;
@@ -103,15 +105,43 @@ export default function Home() {
 
       {lists.length > 0 && (
         <section className="mt-14">
-          <h2 className="text-xl font-semibold">Meine Wunschzettel</h2>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <h2 className="text-xl font-semibold">Meine Wunschzettel</h2>
+            <select value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}
+              className="rounded-lg border border-neutral-300 bg-white px-2 py-1.5 text-sm" aria-label="Sortieren">
+              <option value="neu">Zuletzt bearbeitet</option>
+              <option value="name">Name A–Z</option>
+              <option value="wuensche">Meiste Wünsche</option>
+            </select>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {([["alle", "Alle"], ...templateList.map((t) => [t.id, t.id === "minimal" ? "Sonstiges" : t.name])] as [TemplateId | "alle", string][]).map(
+              ([id, name]) => {
+                const count = id === "alle" ? lists.length : lists.filter((l) => l.template === id).length;
+                if (id !== "alle" && count === 0) return null;
+                return (
+                  <button key={id} onClick={() => setFilter(id)}
+                    className={`rounded-full px-3.5 py-1.5 text-sm ${filter === id ? "bg-neutral-900 text-white" : "border border-neutral-300 bg-white hover:bg-neutral-50"}`}>
+                    {name} <span className="opacity-60">{count}</span>
+                  </button>
+                );
+              },
+            )}
+          </div>
           <ul className="mt-4 divide-y divide-neutral-200 rounded-2xl border border-neutral-200 bg-white">
-            {lists.map((l) => (
+            {lists
+              .filter((l) => filter === "alle" || l.template === filter)
+              .sort((a, b) =>
+                sort === "name" ? a.title.localeCompare(b.title, "de") : sort === "wuensche" ? b.wishes.length - a.wishes.length : b.updatedAt - a.updatedAt,
+              )
+              .map((l) => (
               <li key={l.id} className="flex items-center justify-between gap-4 p-4">
                 <Link href={`/liste/${l.id}`} className="min-w-0 flex-1 hover:text-rose-600">
                   <div className="truncate font-medium">{l.title}</div>
                   <div className="text-sm text-neutral-500">
                     {l.wishes.length} {l.wishes.length === 1 ? "Wunsch" : "Wünsche"} ·{" "}
-                    {templateList.find((t) => t.id === l.template)?.name}
+                    {l.template === "minimal" ? "Sonstiges" : templateList.find((t) => t.id === l.template)?.name}
+                    {l.design && !l.design.off ? " · Scrapbook" : ""}
                   </div>
                 </Link>
                 <button
