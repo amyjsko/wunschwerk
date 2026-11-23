@@ -23,6 +23,8 @@ export interface WishList {
   template: TemplateId;
   layout: LayoutId;
   wishes: Wish[];
+  /** Freie Scrapbook-Gestaltung. Fehlt sie, wird die Vorlage benutzt. */
+  design?: Design | null;
   createdAt: number;
   updatedAt: number;
 }
@@ -40,7 +42,35 @@ export interface Reservation {
   name: string;
 }
 
-export interface SharedList extends Pick<WishList, "title" | "subtitle" | "template" | "layout" | "wishes"> {
+export interface SharedList extends Pick<WishList, "title" | "subtitle" | "template" | "layout" | "wishes" | "design"> {
   is_owner?: boolean;
   reservations?: Reservation[];
+}
+
+export type PaperId = "creme" | "kariert" | "punkte" | "liniert" | "kraft" | "rosa" | "salbei" | "nacht";
+export type FontId = "hand" | "marker" | "schreib" | "serif" | "rund";
+
+export interface DesignItem {
+  id: string;
+  kind: "wish" | "sticker" | "text";
+  /** Mittelpunkt auf der Seite (Seite ist 1000 × 1400) */
+  x: number;
+  y: number;
+  /** Breite auf der Seite (bei Texten: Größe) */
+  w: number;
+  /** Drehung in Grad */
+  rot: number;
+  z: number;
+  wishId?: string;
+  sticker?: string;
+  text?: string;
+  font?: FontId;
+  color?: string;
+}
+
+export interface Design {
+  /** true = Vorlage benutzen, Scrapbook bleibt aber gespeichert */
+  off?: boolean;
+  paper: PaperId;
+  items: DesignItem[];
 }

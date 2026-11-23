@@ -6,11 +6,16 @@ import WishBoard from "@/components/WishBoard";
 import AddWish from "@/components/AddWish";
 import BookmarkletButton from "@/components/BookmarkletButton";
 import ShareDialog from "@/components/ShareDialog";
+import ScrapbookBoard from "@/components/ScrapbookBoard";
+import ScrapbookTools from "@/components/ScrapbookTools";
+import { stickerMap } from "@/components/stickers";
+import { createDesign, paperMap, syncDesign } from "@/lib/design";
+import { uid } from "@/lib/format";
 import { useSession } from "@/lib/auth";
 import { getList, saveList } from "@/lib/store";
 import { templateList } from "@/lib/templates";
 import { formatPrice } from "@/lib/format";
-import type { Wish, WishList } from "@/lib/types";
+import type { Design, DesignItem, Wish, WishList } from "@/lib/types";
 
 export default function EditorPage() {
   const { id } = useParams<{ id: string }>();
@@ -19,6 +24,9 @@ export default function EditorPage() {
   const [saveState, setSaveState] = useState<"saved" | "saving" | "error">("saved");
   const session = useSession();
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pageRef = useRef<HTMLDivElement>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     if (session === undefined) return;
@@ -39,10 +47,92 @@ export default function EditorPage() {
     setList((prev) => {
       if (!prev) return prev;
       const next = { ...prev, ...patch, updatedAt: Date.now() };
+      if (patch.wishes && next.design) next.design = syncDesign(next.design, next.wishes.map((w) => w.id));
       persist(next);
       return next;
     });
   }
+
+  function updateDesign(fn: (d: Design) => Design) {
+    setList((prev) => {
+      if (!prev?.design) return prev;
+      const next = { ...prev, design: fn(prev.design), updatedAt: Date.now() };
+      persist(next);
+      return next;
+    });
+  }
+
+  const changeItem = (itemId: string, patch: Partial<DesignItem>) =>
+    updateDesign((d) => ({ ...d, items: d.items.map((i) => (i.id === itemId ? { ...i, ...patch } : i)) }));
+
+  function addItem(item: Omit<DesignItem, "id" | "z" | "x" | "y" | "rot">) {
+    const id = uid();
+    updateDesign((d) => ({
+      ...d,
+      items: [
+        ...d.items,
+        {
+          ...item,
+          id,
+          x: 500 + Math.round((Math.random() - 0.5) * 200),
+          y: 380 + Math.round((Math.random() - 0.5) * 160),
+          rot: Math.round((Math.random() - 0.5) * 16),
+          z: Math.max(0, ...d.items.map((i) => i.z)) + 1,
+        },
+      ],
+    }));
+    setSelectedId(id);
+  }
+
+  function deleteSelected() {
+    if (!selectedId) return;
+    updateDesign((d) => ({ ...d, items: d.items.filter((i) => i.id !== selectedId || i.kind === "wish") }));
+    setSelectedId(null);
+  }
+
+  function layer(dir: "vor" | "zurueck") {
+    updateDesign((d) => {
+      const zs = d.items.map((i) => i.z);
+      const z = dir === "vor" ? Math.max(...zs) + 1 : Math.min(...zs) - 1;
+      return { ...d, items: d.items.map((i) => (i.id === selectedId ? { ...i, z } : i)) };
+    });
+  }
+
+  async function exportImage() {
+    if (!pageRef.current) return;
+    setSelectedId(null);
+    setExporting(true);
+    await new Promise((r) => setTimeout(r, 50));
+    try {
+      const { toPng } = await import("html-to-image");
+      const url = await toPng(pageRef.current, {
+        pixelRatio: 1.2,
+        cacheBust: true,
+        style: { transform: "none", borderRadius: "0" },
+        filter: (n) => !(n instanceof HTMLElement && n.classList.contains("no-print")),
+      });
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${(list?.title || "wunschzettel").replace(/[^\p{L}\p{N}]+/gu, "-")}.png`;
+      a.click();
+    } catch {
+      alert("Das Bild konnte nicht erstellt werden. Bitte versuch es noch einmal.");
+    }
+    setExporting(false);
+  }
+
+  // Entf-Taste löscht ausgewählte Sticker und Texte
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement;
+      if (t.closest("input, textarea, select, [contenteditable]")) return;
+      if ((e.key === "Delete" || e.key === "Backspace") && selectedId) deleteSelected();
+      if (e.key === "Escape") setSelectedId(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
 
   if (list === undefined) return <main className="py-24 text-center text-neutral-400">Wird geladen…</main>;
   if (list === null)
@@ -52,6 +142,9 @@ export default function EditorPage() {
         <Link href="/" className="text-rose-600 underline">Zur Startseite</Link>
       </main>
     );
+
+  const scrap = Boolean(list.design && !list.design.off);
+  const selected = scrap ? list.design!.items.find((i) => i.id === selectedId) ?? null : null;
 
   const setWish = (wid: string, patch: Partial<Wish>) =>
     update({ wishes: list.wishes.map((w) => (w.id === wid ? { ...w, ...patch } : w)) });
@@ -99,7 +192,55 @@ export default function EditorPage() {
           </label>
         </section>
 
-        <section className="mt-6">
+        <div className="mt-6 flex rounded-xl bg-neutral-100 p-1 text-sm font-semibold">
+          <button
+            onClick={() => list.design && update({ design: { ...list.design, off: true } })}
+            className={`flex-1 rounded-lg py-2 ${!scrap ? "bg-white shadow" : "text-neutral-500"}`}
+          >
+            Vorlage
+          </button>
+          <button
+            onClick={() => update({ design: list.design ? { ...list.design, off: false } : createDesign(list) })}
+            className={`flex-1 rounded-lg py-2 ${scrap ? "bg-white shadow" : "text-neutral-500"}`}
+          >
+            Scrapbook 📒
+          </button>
+        </div>
+
+        {scrap && (
+          <div className="mt-6">
+            <ScrapbookTools
+              design={list.design!}
+              selected={selected}
+              onPaper={(paper) =>
+                updateDesign((d) => {
+                  // Texte in Standardfarben passen sich hellem oder dunklem Papier an
+                  const dark = paperMap[paper]?.dark;
+                  const swap: Record<string, string> = dark
+                    ? { "#3b2f2a": "#f3d27a", "#7a6a5e": "#e8dcc4" }
+                    : { "#f3d27a": "#3b2f2a", "#e8dcc4": "#7a6a5e", "#ffffff": "#3b2f2a" };
+                  return {
+                    ...d,
+                    paper,
+                    items: d.items.map((i) => (i.kind === "text" && i.color && swap[i.color] ? { ...i, color: swap[i.color] } : i)),
+                  };
+                })
+              }
+              onAddSticker={(sid) => {
+                const def = stickerMap[sid];
+                addItem({ kind: "sticker", sticker: sid, w: def?.w ?? 100 });
+              }}
+              onAddText={() => addItem({ kind: "text", text: "Dein Text", font: "hand", w: 280 })}
+              onChangeSelected={(patch) => selectedId && changeItem(selectedId, patch)}
+              onLayer={layer}
+              onDeleteSelected={deleteSelected}
+              onExport={exportImage}
+              exporting={exporting}
+            />
+          </div>
+        )}
+
+        <section className={`mt-6 ${scrap ? "hidden" : ""}`}>
           <span className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Vorlage</span>
           <div className="mt-2 grid grid-cols-4 gap-2">
             {templateList.map((t) => (
@@ -176,7 +317,21 @@ export default function EditorPage() {
       </aside>
 
       <main className="p-4 sm:p-8 lg:h-screen lg:overflow-y-auto">
-        <WishBoard list={list} />
+        {scrap ? (
+          <div className="mx-auto max-w-3xl">
+            <ScrapbookBoard
+              design={list.design!}
+              wishes={list.wishes}
+              editable
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              onChangeItem={changeItem}
+              pageRef={pageRef}
+            />
+          </div>
+        ) : (
+          <WishBoard list={list} />
+        )}
       </main>
 
       {sharing && <ShareDialog list={list} onClose={() => setSharing(false)} />}

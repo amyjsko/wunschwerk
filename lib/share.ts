@@ -32,6 +32,7 @@ export async function encodeList(list: WishList): Promise<string> {
     template: list.template,
     layout: list.layout,
     wishes: list.wishes,
+    design: list.design,
   };
   const json = new TextEncoder().encode(JSON.stringify(data));
   return toBase64Url(await pipe(json, new CompressionStream("deflate-raw")));

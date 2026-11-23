@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import WishBoard from "@/components/WishBoard";
+import ScrapbookBoard from "@/components/ScrapbookBoard";
 import {
   cancelReservation,
   getSharedList,
@@ -16,6 +17,7 @@ const NAME_KEY = "wunschwerk:mein-name";
 
 export default function SharedListPage() {
   const { slug } = useParams<{ slug: string }>();
+  const [asList, setAsList] = useState(false);
   const [list, setList] = useState<SharedList | null | undefined>(undefined);
   const [mine, setMine] = useState<Record<string, string>>({});
   const [asking, setAsking] = useState<Wish | null>(null);
@@ -82,6 +84,9 @@ export default function SharedListPage() {
     );
 
   const reserved = Object.fromEntries((list.reservations ?? []).map((r) => [r.wish_id, r.name]));
+  const reserveProps = list.is_owner
+    ? undefined
+    : { reserved, mine: new Set(Object.keys(mine)), onReserve: (w: Wish) => { setError(""); setAsking(w); }, onCancel: cancel };
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:py-12">
@@ -96,14 +101,18 @@ export default function SharedListPage() {
         </p>
       )}
 
-      <WishBoard
-        list={list}
-        reserve={
-          list.is_owner
-            ? undefined
-            : { reserved, mine: new Set(Object.keys(mine)), onReserve: (w) => { setError(""); setAsking(w); }, onCancel: cancel }
-        }
-      />
+      {list.design && !list.design.off && !asList ? (
+        <div className="mx-auto max-w-3xl">
+          <ScrapbookBoard design={list.design} wishes={list.wishes} reserve={reserveProps} />
+          <div className="no-print mt-4 text-center">
+            <button onClick={() => setAsList(true)} className="rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm">
+              📋 Wünsche als Liste ansehen
+            </button>
+          </div>
+        </div>
+      ) : (
+        <WishBoard list={asList ? { ...list, layout: "liste" } : list} reserve={reserveProps} />
+      )}
 
       <div className="no-print mt-8 text-center text-sm text-neutral-500">
         <Link href="/" className="text-rose-600 underline">Eigenen Wunschzettel erstellen</Link>

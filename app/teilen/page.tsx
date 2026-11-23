@@ -2,12 +2,14 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import WishBoard from "@/components/WishBoard";
+import ScrapbookBoard from "@/components/ScrapbookBoard";
 import { decodeList } from "@/lib/share";
 import type { WishList } from "@/lib/types";
 
-type Shared = Pick<WishList, "title" | "subtitle" | "template" | "layout" | "wishes">;
+type Shared = Pick<WishList, "title" | "subtitle" | "template" | "layout" | "wishes" | "design">;
 
 export default function SharedPage() {
+  const [asList, setAsList] = useState(false);
   const [list, setList] = useState<Shared | null>(null);
   const [error, setError] = useState(false);
 
@@ -35,7 +37,18 @@ export default function SharedPage() {
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:py-12">
-      <WishBoard list={list} />
+      {list.design && !list.design.off && !asList ? (
+        <div className="mx-auto max-w-3xl">
+          <ScrapbookBoard design={list.design} wishes={list.wishes} />
+          <div className="no-print mt-4 text-center">
+            <button onClick={() => setAsList(true)} className="rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm">
+              📋 Wünsche als Liste ansehen
+            </button>
+          </div>
+        </div>
+      ) : (
+        <WishBoard list={asList ? { ...list, layout: "liste" } : list} />
+      )}
       <div className="no-print mt-8 text-center text-sm text-neutral-500">
         <Link href="/" className="text-rose-600 underline">Eigenen Wunschzettel erstellen</Link>
       </div>
