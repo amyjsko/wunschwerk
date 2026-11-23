@@ -45,6 +45,12 @@ export const stickers: StickerDef[] = [
   { id: "washi-streifen", name: "Washi-Tape Streifen", ratio: 4, w: 220, h: 42, color: "", group: "tape", washi: "streifen", draw: washi("streifen") },
   { id: "washi-karo", name: "Washi-Tape Vichy-Karo", ratio: 4, w: 220, h: 42, color: "", group: "tape", washi: "karo", draw: washi("karo") },
   { id: "washi-ranke", name: "Washi-Tape Blätterranke", ratio: 4, w: 220, h: 42, color: "", group: "tape", washi: "ranke", draw: washi("ranke") },
+  ...([
+    ["x-tartan", "Schottenkaro"], ["x-vichy", "Vichy Rot"], ["x-zuckerstange", "Zuckerstange"],
+    ["x-flocken", "Schneeflocken"], ["x-sterne", "Goldsterne"], ["x-tanne", "Tannenzweig"],
+  ] as const).map(([id, name]): StickerDef => ({
+    id: `washi-${id}`, name: `Washi-Tape ${name}`, ratio: 4, w: 220, h: 42, color: "", group: "tape", washi: id, anlass: "weihnachten", draw: washi(id),
+  })),
   { id: "washi-rosa", name: "Washi-Tape Rosé", ratio: 4, w: 220, h: 42, color: "", group: "tape", washi: "rosa", draw: washi("rosa") },
 
   // Deko
@@ -299,6 +305,80 @@ export const stickers: StickerDef[] = [
       </svg>
     ),
   },
+  // Weihnachts-Doodles (Tinte, einfärbbar)
+  {
+    id: "d-lichterkette", name: "Lichterkette", ratio: 3.2, w: 320, color: "#3d322a", group: "doodle", anlass: "weihnachten",
+    draw: (c) => (
+      <svg viewBox="0 0 320 100" width="100%" height="100%" fill="none" strokeLinecap="round">
+        <path d="M4 20 C60 70 110 72 160 44 C210 16 260 18 316 60" stroke={c} strokeWidth="2.5" />
+        {[[30, 42, "#e9c46a"], [70, 62, "#b5413a"], [112, 64, "#7d8b63"], [152, 48, "#e9c46a"], [192, 30, "#b5413a"], [232, 24, "#7d8b63"], [272, 36, "#e9c46a"], [304, 54, "#b5413a"]].map(([x, y, f], i) => (
+          <g key={i} transform={`translate(${x} ${y}) rotate(${i % 2 ? 12 : -10})`}>
+            <rect x="-4" y="0" width="8" height="7" rx="1.5" fill={c} />
+            <path d="M0 6 C-9 12 -8 28 0 31 C8 28 9 12 0 6 Z" fill={f as string} stroke={c} strokeWidth="1.8" />
+            <path d="M-2 12 C-4 16 -4 20 -3 23" stroke="#fff" strokeWidth="1.5" opacity=".6" />
+          </g>
+        ))}
+      </svg>
+    ),
+  },
+  {
+    id: "d-stern", name: "Doodle-Stern", ratio: 1, w: 80, color: "#3d322a", group: "doodle", anlass: "weihnachten",
+    draw: (c) => (
+      <svg viewBox="0 0 100 100" width="100%" height="100%" fill="none" stroke={c} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M50 8 L61 38 L93 40 L68 60 L77 91 L50 73 L24 92 L32 61 L7 41 L39 38 Z" />
+        <path d="M50 22 L57 41 L77 43" opacity=".35" />
+      </svg>
+    ),
+  },
+  {
+    id: "d-flocke", name: "Doodle-Schneeflocke", ratio: 1, w: 80, color: "#3d322a", group: "doodle", anlass: "weihnachten",
+    draw: (c) => (
+      <svg viewBox="0 0 100 100" width="100%" height="100%" fill="none" stroke={c} strokeWidth="3.5" strokeLinecap="round">
+        {[0, 60, 120].map((a) => (
+          <g key={a} transform={`rotate(${a} 50 50)`}>
+            <path d="M50 8 V92" />
+            <path d="M50 22 L41 13 M50 22 L59 13 M50 78 L41 87 M50 78 L59 87" />
+          </g>
+        ))}
+        <circle cx="50" cy="50" r="5" />
+      </svg>
+    ),
+  },
+  {
+    id: "d-schnoerkel", name: "Schnörkel", ratio: 4, w: 280, color: "#3d322a", group: "doodle", anlass: "weihnachten",
+    draw: (c) => (
+      <svg viewBox="0 0 320 80" width="100%" height="100%" fill="none" stroke={c} strokeWidth="3" strokeLinecap="round">
+        <path d="M10 40 H110 C125 40 128 20 140 20 C155 20 152 44 160 44 C168 44 165 20 180 20 C192 20 195 40 210 40 H310" />
+        <path d="M120 40 C110 58 132 64 140 52 M200 40 C210 58 188 64 180 52" />
+        <circle cx="160" cy="58" r="4" fill={c} />
+      </svg>
+    ),
+  },
+  {
+    id: "d-pfeil-schleife", name: "Pfeil mit Schleife", ratio: 2.4, w: 200, color: "#3d322a", group: "doodle", anlass: "weihnachten",
+    draw: (c) => (
+      <svg viewBox="0 0 240 100" width="100%" height="100%" fill="none" stroke={c} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M10 70 C60 30 120 80 160 50 C180 36 196 34 222 40" />
+        <path d="M206 28 L224 40 L208 54" />
+        <path d="M86 58 C70 38 64 64 86 58 C104 40 110 66 86 58 L78 82 M86 58 L96 84" stroke="#b5413a" />
+      </svg>
+    ),
+  },
+  {
+    id: "d-mistel", name: "Mistelzweig", ratio: 0.8, w: 110, color: "#7d8b63", group: "doodle", anlass: "weihnachten",
+    draw: (c) => (
+      <svg viewBox="0 0 80 100" width="100%" height="100%" strokeLinecap="round">
+        <path d="M40 4 V30" stroke="#b5413a" strokeWidth="3" />
+        <path d="M30 6 C34 14 46 14 50 6" stroke="#b5413a" strokeWidth="3" fill="none" />
+        <path d="M40 30 C20 40 10 62 14 86 C30 76 38 56 40 30 Z" fill={c} />
+        <path d="M40 30 C60 40 70 62 66 86 C50 76 42 56 40 30 Z" fill={c} opacity=".8" />
+        <path d="M40 30 C34 50 38 70 40 92" stroke="#4b5f3d" strokeWidth="2" fill="none" />
+        <circle cx="36" cy="36" r="5" fill="#f4efe3" stroke="#d8c7a8" />
+        <circle cx="45" cy="38" r="5" fill="#f4efe3" stroke="#d8c7a8" />
+        <circle cx="40" cy="44" r="5" fill="#f4efe3" stroke="#d8c7a8" />
+      </svg>
+    ),
+  },
 ];
 
 /** Eigene Bild-Sticker (PNG in /public/sticker). Neue Bilder einfach hier eintragen. */
@@ -313,4 +393,4 @@ export const stickerMap: Record<string, StickerDef> = Object.fromEntries(sticker
 for (const [alt, neu] of [["tape-streifen", "washi-streifen"], ["tape-punkte", "washi-rosa"], ["tape-karo", "washi-karo"], ["tape-uni", "washi-ranke"]])
   stickerMap[alt] = stickerMap[neu];
 
-export const stickerColors = ["#e8577a", "#f4a7b9", "#f2c14e", "#f6d38b", "#a8d5c2", "#7fa77a", "#9cc7e8", "#b9c4f2", "#c9a7e8", "#d4a94e", "#3b2f2a", "#ffffff"];
+export const stickerColors = ["#3d322a", "#efe4cf", "#b5413a", "#7c2a2a", "#2f4a3a", "#7d8b63", "#d4af5a", "#c39a6b", "#e8577a", "#f4a7b9", "#f2c14e", "#f6d38b", "#a8d5c2", "#7fa77a", "#9cc7e8", "#b9c4f2", "#c9a7e8", "#d4a94e", "#3b2f2a", "#ffffff"];

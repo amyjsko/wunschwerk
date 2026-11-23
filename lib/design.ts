@@ -159,7 +159,7 @@ export const textColors = ["#3b2f2a", "#b5573b", "#7d8b63", "#e3a993", "#e8577a"
 
 const templatePaper: Record<TemplateId, PaperId> = {
   journal: "creme",
-  weihnachten: "nacht",
+  weihnachten: "goldpunkte",
   geburtstag: "rosa",
   hochzeit: "creme",
   minimal: "punkte",
@@ -167,13 +167,14 @@ const templatePaper: Record<TemplateId, PaperId> = {
 
 const templateStickers: Record<TemplateId, string[]> = {
   journal: ["zweig", "funkeln", "herzchen", "blume", "zweig"],
-  weihnachten: ["tannenbaum", "schneeflocke", "stern", "geschenk", "funkeln"],
+  weihnachten: ["d-mistel", "d-flocke", "d-stern", "geschenk", "funkeln"],
   geburtstag: ["ballon", "torte", "funkeln", "herz", "ballon"],
   hochzeit: ["ringe", "zweig", "gaensebluemchen", "herzchen", "zweig"],
   minimal: ["funkeln", "blume", "herz", "zweig", "stern"],
 };
 
 const tapes = ["washi-streifen", "washi-karo", "washi-ranke", "washi-rosa"];
+const xmasTapes = ["washi-x-vichy", "washi-x-tanne", "washi-x-sterne", "washi-x-zuckerstange", "washi-x-tartan", "washi-x-flocken"];
 
 /** Rastert Wünsche in einer lockeren Collage, leicht schräg, wie eingeklebt. */
 export function wishSlot(index: number): Pick<DesignItem, "x" | "y" | "rot"> {
@@ -191,7 +192,7 @@ export function wishSlot(index: number): Pick<DesignItem, "x" | "y" | "rot"> {
 export function createDesign(list: Pick<WishList, "title" | "subtitle" | "template" | "wishes">): Design {
   const items: DesignItem[] = [];
   let z = 1;
-  const dark = templatePaper[list.template] === "nacht";
+  const dark = !!paperMap[templatePaper[list.template]]?.dark;
   items.push({
     id: uid(), kind: "text", text: list.title || "Meine Wünsche", font: "schreib",
     x: 500, y: 150, w: 560, rot: -2, z: z++, color: dark ? "#f3d27a" : "#3b2f2a",
@@ -207,7 +208,7 @@ export function createDesign(list: Pick<WishList, "title" | "subtitle" | "templa
     const slot = wishSlot(i);
     items.push({ id: uid(), kind: "wish", wishId: w.id, ...slot, w: WISH_W, z: z++ });
     items.push({
-      id: uid(), kind: "sticker", sticker: tapes[i % tapes.length],
+      id: uid(), kind: "sticker", sticker: list.template === "weihnachten" ? xmasTapes[i % xmasTapes.length] : tapes[i % tapes.length],
       x: slot.x + (i % 2 ? 40 : -30), y: slot.y - 165, w: 150, h: 36, rot: slot.rot + (i % 2 ? 8 : -10), z: 900 + i,
     });
   });
@@ -218,7 +219,9 @@ export function createDesign(list: Pick<WishList, "title" | "subtitle" | "templa
   ];
   deco.forEach((s, i) => {
     const [x, y, rot] = spots[i];
-    items.push({ id: uid(), kind: "sticker", sticker: s, x, y, w: 100, rot, z: z++ });
+    // Tinten-Doodles auf dunklem Papier hell zeichnen
+    const color = dark && s.startsWith("d-") && s !== "d-mistel" ? "#efe4cf" : undefined;
+    items.push({ id: uid(), kind: "sticker", sticker: s, x, y, w: 100, rot, z: z++, ...(color ? { color } : {}) });
   });
 
   return { paper: templatePaper[list.template], items };
