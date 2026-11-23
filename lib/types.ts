@@ -12,6 +12,8 @@ export interface Wish {
   note?: string;
   /** 1 = nett, 2 = schön, 3 = Herzenswunsch */
   priority: 1 | 2 | 3;
+  /** Für Gäste ausgeblendet */
+  hidden?: boolean;
 }
 
 export interface WishList {

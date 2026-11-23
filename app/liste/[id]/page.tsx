@@ -109,7 +109,7 @@ export default function EditorPage() {
         pixelRatio: 1.2,
         cacheBust: true,
         style: { transform: "none", borderRadius: "0" },
-        filter: (n) => !(n instanceof HTMLElement && n.classList.contains("no-print")),
+        filter: (n) => !(n instanceof HTMLElement && (n.classList.contains("no-print") || n.classList.contains("export-hide"))),
       });
       const a = document.createElement("a");
       a.href = url;
@@ -271,10 +271,11 @@ export default function EditorPage() {
           <section className="mt-6">
             <span className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
               Meine Wünsche ({list.wishes.length})
+              {list.wishes.some((w) => w.hidden) && ` · ${list.wishes.filter((w) => w.hidden).length} ausgeblendet`}
             </span>
             <ul className="mt-2 space-y-2">
               {list.wishes.map((w, i) => (
-                <li key={w.id} className="rounded-xl border border-neutral-200 p-3">
+                <li key={w.id} className={`rounded-xl border p-3 ${w.hidden ? "border-dashed border-neutral-300 bg-neutral-50 opacity-70" : "border-neutral-200"}`}>
                   <div className="flex gap-3">
                     {w.image ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -302,7 +303,13 @@ export default function EditorPage() {
                         </button>
                       ))}
                     </div>
-                    <div className="flex gap-1 text-neutral-500">
+                    <div className="flex items-center gap-1 text-neutral-500">
+                      <button onClick={() => setWish(w.id, { hidden: !w.hidden })}
+                        className={`flex items-center gap-1 rounded-full px-2 py-0.5 ${w.hidden ? "bg-neutral-200 text-neutral-700" : "hover:bg-neutral-100"}`}
+                        title={w.hidden ? "Wieder für Gäste einblenden" : "Für Gäste ausblenden"} aria-pressed={!!w.hidden}>
+                        {w.hidden ? <EyeOff /> : <Eye />}
+                        {w.hidden && <span className="text-xs">ausgeblendet</span>}
+                      </button>
                       <button onClick={() => move(i, -1)} disabled={i === 0} className="px-1.5 disabled:opacity-30" title="Nach vorne">↑</button>
                       <button onClick={() => move(i, 1)} disabled={i === list.wishes.length - 1} className="px-1.5 disabled:opacity-30" title="Nach hinten">↓</button>
                       <button onClick={() => update({ wishes: list.wishes.filter((x) => x.id !== w.id) })}
@@ -322,6 +329,7 @@ export default function EditorPage() {
             <ScrapbookBoard
               design={list.design!}
               wishes={list.wishes}
+              dimmed={new Set(list.wishes.filter((w) => w.hidden).map((w) => w.id))}
               editable
               selectedId={selectedId}
               onSelect={setSelectedId}
@@ -330,11 +338,28 @@ export default function EditorPage() {
             />
           </div>
         ) : (
-          <WishBoard list={list} />
+          <WishBoard list={{ ...list, wishes: list.wishes.filter((w) => !w.hidden) }} />
         )}
       </main>
 
       {sharing && <ShareDialog list={list} onClose={() => setSharing(false)} />}
     </div>
+  );
+}
+
+function Eye() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+      <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function EyeOff() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+      <path d="M3 3l18 18M10.6 5.1A10.6 10.6 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a9.9 9.9 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+    </svg>
   );
 }

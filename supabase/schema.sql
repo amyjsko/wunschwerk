@@ -73,7 +73,8 @@ begin
     'subtitle', l.subtitle,
     'template', l.template,
     'layout', l.layout,
-    'wishes', l.wishes,
+    'wishes', coalesce((select jsonb_agg(w) from jsonb_array_elements(l.wishes) w
+                         where coalesce((w->>'hidden')::boolean, false) = false), '[]'::jsonb),
     'design', l.design,
     'is_owner', is_owner,
     'reservations', case when is_owner then '[]'::json else coalesce(

@@ -31,7 +31,7 @@ export async function encodeList(list: WishList): Promise<string> {
     subtitle: list.subtitle,
     template: list.template,
     layout: list.layout,
-    wishes: list.wishes,
+    wishes: list.wishes.filter((w) => !w.hidden),
     design: list.design,
   };
   const json = new TextEncoder().encode(JSON.stringify(data));

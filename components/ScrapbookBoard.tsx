@@ -21,6 +21,8 @@ interface Props {
   onChangeItem?: (id: string, patch: Partial<DesignItem>) => void;
   reserve?: ReserveProps;
   pageRef?: React.RefObject<HTMLDivElement | null>;
+  /** Ausgeblendete Wünsche: im Editor blass, im Bild-Export weggelassen */
+  dimmed?: Set<string>;
 }
 
 /** Bilder aus Shops laufen über unseren Server, damit sie überall laden und exportiert werden können. */
@@ -35,7 +37,7 @@ export function pageHeight(design: Design) {
   return Math.max(PAGE_H, Math.ceil((bottom + 120) / 100) * 100);
 }
 
-export default function ScrapbookBoard({ design, wishes, editable, selectedId, onSelect, onChangeItem, reserve, pageRef }: Props) {
+export default function ScrapbookBoard({ design, wishes, editable, selectedId, onSelect, onChangeItem, reserve, pageRef, dimmed }: Props) {
   const outer = useRef<HTMLDivElement>(null);
   const localPage = useRef<HTMLDivElement>(null);
   const page = pageRef ?? localPage;
@@ -131,11 +133,13 @@ export default function ScrapbookBoard({ design, wishes, editable, selectedId, o
           const selected = editable && selectedId === item.id;
           const content = renderItem(item, wishById, !editable ? reserve : undefined, paper.dark, !editable);
           if (!content) return null;
+          const hidden = item.kind === "wish" && !!item.wishId && !!dimmed?.has(item.wishId);
           return (
             <div
               key={item.id}
+              title={hidden ? "Für Gäste ausgeblendet" : undefined}
               onPointerDown={(e) => startMove(e, item)}
-              className={`absolute ${editable ? "cursor-grab active:cursor-grabbing" : item.kind === "wish" ? "" : "pointer-events-none"}`}
+              className={`absolute ${hidden ? "export-hide" : ""} ${editable ? "cursor-grab active:cursor-grabbing" : item.kind === "wish" ? "" : "pointer-events-none"}`}
               style={{
                 left: item.x,
                 top: item.y,
@@ -145,7 +149,16 @@ export default function ScrapbookBoard({ design, wishes, editable, selectedId, o
                 userSelect: "none",
               }}
             >
-              {content}
+              {hidden ? (
+                <div style={{ opacity: 0.35, filter: "grayscale(0.6)" }}>{content}</div>
+              ) : (
+                content
+              )}
+              {hidden && (
+                <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-neutral-800/80 px-3 py-1 text-white" style={{ fontSize: 15 }}>
+                  ausgeblendet
+                </div>
+              )}
               {selected && (
                 <>
                   <div className="pointer-events-none absolute -inset-2 rounded-md border-2 border-dashed border-rose-500" style={{ borderWidth: 2 / scale }} />
