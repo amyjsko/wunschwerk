@@ -6,8 +6,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
  * im Browser), der Schutz kommt von den Regeln in supabase/schema.sql.
  * Über NEXT_PUBLIC_SUPABASE_URL / _ANON_KEY lässt sich ein anderes Projekt einstellen.
  */
-const URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://szydavbuuaywjxelaias.supabase.co";
-const KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_F2OLDFiKx-0GzdlSJhC3Vg_dC9Jzj_G";
+import { SUPABASE_KEY as KEY, SUPABASE_URL as URL } from "./supabase-config";
 
 export const cloudEnabled = Boolean(URL && KEY);
 

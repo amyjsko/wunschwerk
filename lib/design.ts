@@ -169,7 +169,7 @@ export const fontMap = Object.fromEntries(fonts.map((f) => [f.id, f])) as Record
 
 export const textColors = ["#3b2f2a", "#b5573b", "#7d8b63", "#e3a993", "#e8577a", "#c8102e", "#2b6cb0", "#4f8a5b", "#8a6d3b", "#7a5d99", "#8c2f35", "#2f5040", "#c79a3f", "#f3d27a", "#ffffff"];
 
-const templatePaper: Record<TemplateId, PaperId> = {
+export const templatePaper: Record<TemplateId, PaperId> = {
   journal: "creme",
   weihnachten: "nacht",
   geburtstag: "rosa",

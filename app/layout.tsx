@@ -16,7 +16,13 @@ const feder = Homemade_Apple({ subsets: ["latin"], weight: "400", variable: "--f
 const amatic = Amatic_SC({ subsets: ["latin"], weight: ["400", "700"], variable: "--font-amatic", preload: false });
 const schwung = Berkshire_Swash({ subsets: ["latin"], weight: "400", variable: "--font-schwung", preload: false });
 
+// Absolute Adresse für Vorschaubilder (WhatsApp & Co. brauchen die öffentliche Adresse)
+const site = process.env.VERCEL_PROJECT_PRODUCTION_URL
+  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  : "http://localhost:3000";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(site),
   title: "Wunschwerk – Wünsche sammeln, schön gestalten, teilen",
   description: "Merke dir Wünsche aus jedem Shop und gestalte daraus einen schönen Wunschzettel.",
 };
