@@ -1,20 +1,34 @@
 import type { Metadata } from "next";
-import { Inter, Cormorant_Garamond, Great_Vibes, Fredoka, Caveat, Permanent_Marker, Mountains_of_Christmas, Special_Elite, Berkshire_Swash, Homemade_Apple, Amatic_SC } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const cormorant = Cormorant_Garamond({ subsets: ["latin"], weight: ["400", "500", "600"], style: ["normal", "italic"], variable: "--font-cormorant" });
-const script = Great_Vibes({ subsets: ["latin"], weight: "400", variable: "--font-greatvibes" });
-const fredoka = Fredoka({ subsets: ["latin"], variable: "--font-fredoka" });
+// Schriften liegen im Projekt (app/fonts), damit der Build nicht von Google Fonts abhängt
+const inter = localFont({ src: "./fonts/inter-normal-100-900.woff2", weight: "100 900", variable: "--font-inter" });
+const cormorant = localFont({
+  src: [
+    { path: "./fonts/cormorant-normal-400-600.woff2", weight: "400 600", style: "normal" },
+    { path: "./fonts/cormorant-italic-400-600.woff2", weight: "400 600", style: "italic" },
+  ],
+  variable: "--font-cormorant",
+});
+const script = localFont({ src: "./fonts/greatvibes-normal-400.woff2", weight: "400", variable: "--font-greatvibes" });
+const fredoka = localFont({ src: "./fonts/fredoka-normal-300-700.woff2", weight: "300 700", variable: "--font-fredoka" });
 // Handschrift: als --font-caveat geladen, globals.css stellt sie als --font-hand bereit
-const caveat = Caveat({ subsets: ["latin"], variable: "--font-caveat" });
-const marker = Permanent_Marker({ subsets: ["latin"], weight: "400", variable: "--font-marker" });
+const caveat = localFont({ src: "./fonts/caveat-normal-400-700.woff2", weight: "400 700", variable: "--font-caveat" });
+const marker = localFont({ src: "./fonts/marker-normal-400.woff2", weight: "400", variable: "--font-marker" });
 // Nur im Scrapbook gebraucht, darum nicht vorab laden
-const weihnacht = Mountains_of_Christmas({ subsets: ["latin"], weight: "700", variable: "--font-weihnacht", preload: false });
-const maschine = Special_Elite({ subsets: ["latin"], weight: "400", variable: "--font-maschine", preload: false });
-const feder = Homemade_Apple({ subsets: ["latin"], weight: "400", variable: "--font-feder", preload: false });
-const amatic = Amatic_SC({ subsets: ["latin"], weight: ["400", "700"], variable: "--font-amatic", preload: false });
-const schwung = Berkshire_Swash({ subsets: ["latin"], weight: "400", variable: "--font-schwung", preload: false });
+const weihnacht = localFont({ src: "./fonts/weihnacht-normal-700.woff2", weight: "700", variable: "--font-weihnacht", preload: false });
+const maschine = localFont({ src: "./fonts/maschine-normal-400.woff2", weight: "400", variable: "--font-maschine", preload: false });
+const feder = localFont({ src: "./fonts/feder-normal-400.woff2", weight: "400", variable: "--font-feder", preload: false });
+const amatic = localFont({
+  src: [
+    { path: "./fonts/amatic-normal-400.woff2", weight: "400" },
+    { path: "./fonts/amatic-normal-700.woff2", weight: "700" },
+  ],
+  variable: "--font-amatic",
+  preload: false,
+});
+const schwung = localFont({ src: "./fonts/schwung-normal-400.woff2", weight: "400", variable: "--font-schwung", preload: false });
 
 // Absolute Adresse für Vorschaubilder (WhatsApp & Co. brauchen die öffentliche Adresse)
 const site = process.env.VERCEL_PROJECT_PRODUCTION_URL
