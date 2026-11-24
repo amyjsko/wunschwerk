@@ -4,6 +4,40 @@
 import { extraStickers } from "./stickersExtra";
 import { deko2 } from "./deko2";
 
+export type Farbe = "rot" | "rosa" | "gruen" | "gold" | "creme" | "braun" | "blau" | "dunkel";
+
+export const farbFilter: { id: Farbe; name: string; swatch: string }[] = [
+  { id: "rot", name: "Rot", swatch: "#a3343c" },
+  { id: "rosa", name: "Rosa", swatch: "#e3a993" },
+  { id: "gruen", name: "Grün", swatch: "#48694f" },
+  { id: "gold", name: "Gold & Gelb", swatch: "#d4af5a" },
+  { id: "creme", name: "Creme & Weiß", swatch: "#f3e9d7" },
+  { id: "braun", name: "Braun & Kraft", swatch: "#a8693a" },
+  { id: "blau", name: "Blau & Lila", swatch: "#8fa9b8" },
+  { id: "dunkel", name: "Dunkel", swatch: "#3b2f2a" },
+];
+
+/** Ordnet eine Farbe grob einer Filterfarbe zu */
+export function farbeVon(hex: string): Farbe | undefined {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return undefined;
+  const n = parseInt(m[1], 16);
+  const r = (n >> 16) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2, d = max - min;
+  if (l < 0.22 && d < 0.15) return "dunkel";
+  if (l > 0.86 || (d < 0.1 && l > 0.7)) return "creme";
+  if (d < 0.08) return l < 0.4 ? "dunkel" : "creme";
+  let h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  h = (h * 60 + 360) % 360;
+  const s = d / (1 - Math.abs(2 * l - 1));
+  if (h < 18 || h >= 330) return l > 0.65 ? "rosa" : "rot";
+  if (h < 45) return s < 0.45 || l < 0.45 ? "braun" : l > 0.68 ? "rosa" : "rot";
+  if (h < 70) return "gold";
+  if (h < 170) return "gruen";
+  if (h < 300) return "blau";
+  return "rosa";
+}
+
 export type Occasion = "weihnachten" | "alltag" | "geburtstag" | "hochzeit";
 
 export interface StickerDef {
@@ -14,7 +48,9 @@ export interface StickerDef {
   /** Standardbreite auf der Seite */
   w: number;
   color: string;
-  group: "tape" | "deko" | "doodle" | "zettel" | "anlass";
+  group: "tape" | "border" | "deko" | "doodle" | "zettel" | "anlass";
+  /** Farben für den Farbfilter (sonst aus color abgeleitet) */
+  farben?: Farbe[];
   /** Für welche Anlässe der Sticker gedacht ist (ohne Angabe: Alltag) */
   occasions?: Occasion[];
   /** Gezeichnetes Washi-Tape (siehe VectorTape) */
@@ -34,7 +70,7 @@ const ink = "#3b2f2a";
 
 /** Washi-Tape aus Bildern: zwei feste, abgerissene Enden und ein Mittelstück,
    das sich endlos wiederholt. So lässt sich das Tape beliebig verlängern. */
-export function WashiTape({ name, height }: { name: string; height: number }) {
+export function WashiTape({ name, height }: { name: string; height: number | string }) {
   return (
     <div style={{ display: "flex", width: "100%", height }} aria-hidden>
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -47,8 +83,7 @@ export function WashiTape({ name, height }: { name: string; height: number }) {
 }
 
 function washi(name: string) {
-  // eslint-disable-next-line @next/next/no-img-element
-  return () => <img src={`/washi/${name}-preview.png`} alt="" draggable={false} style={{ width: "100%", height: "100%", objectFit: "contain" }} />;
+  return () => <WashiTape name={name} height="100%" />;
 }
 
 const baseStickers: StickerDef[] = [
@@ -334,7 +369,46 @@ export const stickers: StickerDef[] = [
     id: `washi-${id}`, name: `Washi-Tape ${name}`, ratio: 4, w: 220, h: 42, color: "", group: "tape", washi: id, occasions: ["weihnachten"], draw: washi(id),
   })),
   ...deko2,
+  // Eigene Washi-Tapes (gemalt)
+  ...([
+    ["a-schleifen", "Rote Schleifen", ["creme", "rot"]], ["a-diagonal", "Rote Diagonalstreifen", ["creme", "rot", "rosa"]], ["a-karo", "Rosé-Karo", ["rosa", "creme"]],
+  ] as const).map(([id, name, farben]): StickerDef => ({
+    id: `washi-${id}`, name: `Washi-Tape ${name}`, ratio: 4, w: 220, h: 42, color: "", group: "tape", washi: id, occasions: ["weihnachten", "alltag"], farben: [...farben], draw: washi(id),
+  })),
+  // Borders: Bänder lassen sich verlängern, Girlanden haben eine feste Form
+  { id: "border-band", name: "Rotes Band mit Schleifen", ratio: 4, w: 400, h: 26, color: "", group: "border", washi: "b-band", occasions: ["weihnachten", "alltag"], farben: ["rot"], draw: washi("b-band") },
+  { id: "border-spitze", name: "Spitzenborte Creme", ratio: 4, w: 400, h: 30, color: "", group: "border", washi: "b-spitze", occasions: ["alltag", "weihnachten"], farben: ["creme"], draw: washi("b-spitze") },
+  ...([
+    ["border-stechpalme-beeren", "Stechpalmen-Girlande", 7.06, ["gruen", "rot"]],
+    ["border-stechpalme", "Stechpalmen-Ranke", 9.64, ["gruen", "rot"]],
+    ["border-tannengirlande", "Tannengirlande mit Schleife", 8.22, ["gruen", "rot", "braun"]],
+  ] as const).map(([id, name, ratio, farben]): StickerDef => ({
+    id, name, ratio, w: 600, color: "", group: "border", occasions: ["weihnachten"], fixedColor: true, farben: [...farben],
+    // eslint-disable-next-line @next/next/no-img-element
+    draw: () => <img src={`/sticker/${id}.png`} alt="" draggable={false} style={{ width: "100%", height: "100%", objectFit: "contain" }} />,
+  })),
 ];
+
+/** Feste Farbangaben für Bild- und Tape-Sticker */
+const farbenFest: Record<string, Farbe[]> = {
+  "bild-schleife-samt": ["rot"], "bild-schleife-salbei": ["gruen"], "bild-schleife-rose": ["rosa"], "bild-stern-gold": ["gold"],
+  "bild-herz-bordeaux": ["rot"], "bild-blatt-salbei": ["gruen"], "bild-rahmen-polaroid": ["creme"],
+  "washi-streifen": ["creme", "braun"], "washi-karo": ["rot", "creme"], "washi-ranke": ["creme", "gruen"], "washi-rosa": ["rosa"],
+  "washi-x-tartan": ["rot", "gruen"], "washi-x-vichy": ["rot", "creme"], "washi-x-zuckerstange": ["rot", "creme"],
+  "washi-x-flocken": ["gruen", "creme"], "washi-x-sterne": ["gruen", "gold"], "washi-x-tanne": ["creme", "gruen"],
+  "tape-v-tartan": ["rot", "gruen"], "tape-v-tannenzweig": ["creme", "gruen"], "tape-v-schnee": ["creme", "blau"],
+  "tape-v-zuckerstange": ["rot", "creme"], "tape-v-goldsterne": ["creme", "gold"], "tape-v-stechpalme": ["creme", "gruen", "rot"],
+  "tape-v-gruen": ["gruen"], "tape-v-bordeauxpunkte": ["rot"], "tape-v-noten": ["creme", "dunkel"], "tape-v-kraft": ["braun"],
+  "tape-v-salbei": ["gruen"], "tape-v-herzen": ["rosa", "rot"], "tape-v-ginghamsalbei": ["gruen", "creme"],
+};
+
+/** Farben eines Stickers für den Farbfilter */
+export function farbenVon(s: StickerDef): Farbe[] {
+  if (s.farben) return s.farben;
+  if (farbenFest[s.id]) return farbenFest[s.id];
+  const f = s.color ? farbeVon(s.color) : undefined;
+  return f ? [f] : [];
+}
 
 export const isTape = (s?: StickerDef) => !!(s?.washi || s?.tape);
 

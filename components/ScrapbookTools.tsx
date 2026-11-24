@@ -3,7 +3,7 @@ import { useState } from "react";
 import ImageInsert from "./ImageInsert";
 import { fonts, papers, textColors } from "@/lib/design";
 import type { Design, DesignItem, FontId, PaperId } from "@/lib/types";
-import { isTape, stickerColors, stickerMap, stickers, type Occasion, type StickerDef } from "./stickers";
+import { farbFilter, farbenVon, isTape, stickerColors, stickerMap, stickers, type Farbe, type Occasion, type StickerDef } from "./stickers";
 
 const occasions: { id: Occasion | "alle"; name: string }[] = [
   { id: "alle", name: "Alle" },
@@ -15,6 +15,7 @@ const occasions: { id: Occasion | "alle"; name: string }[] = [
 
 const groups: { id: StickerDef["group"]; name: string }[] = [
   { id: "tape", name: "Washi-Tape" },
+  { id: "border", name: "Borders & Bänder" },
   { id: "deko", name: "Deko" },
   { id: "doodle", name: "Doodles" },
   { id: "zettel", name: "Anhänger & Zettel" },
@@ -45,7 +46,10 @@ export default function ScrapbookTools(p: Props) {
   const label_ = washi?.label;
   const [occasion, setOccasion] = useState(p.startOccasion);
   const [inserting, setInserting] = useState(false);
-  const shown = stickers.filter((s) => occasion === "alle" || s.occasions?.includes(occasion));
+  const [farbe, setFarbe] = useState<Farbe | null>(null);
+  const shown = stickers.filter(
+    (s) => (occasion === "alle" || s.occasions?.includes(occasion)) && (!farbe || farbenVon(s).includes(farbe)),
+  );
   return (
     <div className="space-y-6">
       {sel && (
@@ -159,10 +163,30 @@ export default function ScrapbookTools(p: Props) {
             </button>
           ))}
         </div>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <span className="text-xs text-neutral-500">Farbe:</span>
+          {farbFilter.map((f) => (
+            <button
+              key={f.id}
+              title={f.name}
+              aria-label={f.name}
+              aria-pressed={farbe === f.id}
+              onClick={() => setFarbe(farbe === f.id ? null : f.id)}
+              className={`h-6 w-6 rounded-full border border-neutral-300 ${farbe === f.id ? "ring-2 ring-rose-600 ring-offset-1" : ""}`}
+              style={{ background: f.swatch }}
+            />
+          ))}
+          {farbe && (
+            <button onClick={() => setFarbe(null)} className="text-xs underline">
+              alle Farben
+            </button>
+          )}
+        </div>
+        {shown.length === 0 && <p className="mt-3 text-xs text-neutral-500">Keine Sticker in dieser Kombination.</p>}
         {groups.filter((g) => shown.some((s) => s.group === g.id)).map((g) => (
           <div key={g.id} className="mt-3">
             <div className="text-xs text-neutral-500">{g.name}</div>
-            <div className={`mt-1 grid gap-1.5 ${g.id === "tape" ? "grid-cols-2" : g.id === "zettel" ? "grid-cols-4" : "grid-cols-6"}`}>
+            <div className={`mt-1 grid gap-1.5 ${g.id === "tape" || g.id === "border" ? "grid-cols-2" : g.id === "zettel" ? "grid-cols-4" : "grid-cols-6"}`}>
               {shown
                 .filter((s) => s.group === g.id)
                 .map((s) => (
@@ -170,9 +194,17 @@ export default function ScrapbookTools(p: Props) {
                     key={s.id}
                     onClick={() => p.onAddSticker(s.id)}
                     title={s.name}
-                    className={`flex items-center justify-center rounded-lg bg-neutral-50 p-1.5 hover:bg-rose-50 ${isTape(s) ? "h-12" : "aspect-square"}`}
+                    className={`flex items-center justify-center rounded-lg bg-neutral-50 p-1.5 hover:bg-rose-50 ${isTape(s) || s.group === "border" ? "h-12" : "aspect-square"}`}
                   >
-                    <div style={{ pointerEvents: "none", width: s.ratio >= 1 ? "100%" : `${s.ratio * 100}%`, aspectRatio: String(s.ratio) }}>{s.draw(s.color)}</div>
+                    <div
+                      style={
+                        isTape(s)
+                          ? { pointerEvents: "none", width: "100%", height: 24 }
+                          : { pointerEvents: "none", width: s.ratio >= 1 ? "100%" : `${s.ratio * 100}%`, aspectRatio: String(s.ratio) }
+                      }
+                    >
+                      {s.draw(s.color)}
+                    </div>
                   </button>
                 ))}
             </div>

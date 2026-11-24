@@ -17,7 +17,7 @@ const make = (group: StickerDef["group"], occasions: Occasion[]) =>
 
 const tape = (id: string, name: string, occasion: Occasion): StickerDef => ({
   id: `tape-v-${id}`, name: `Washi-Tape ${name}`, ratio: 4, w: 220, h: 42, color: "", group: "tape", occasions: [occasion], tape: id,
-  draw: () => <VectorTape name={id} width={220} height={42} />,
+  draw: () => <VectorTape name={id} width={220} height={42} fit />,
 });
 
 /** Eigene, gemalte Bilder aus public/sticker */

@@ -76,7 +76,7 @@ export const tapePatterns: Record<string, { base: string; w: number; tile: React
   },
 };
 
-export default function VectorTape({ name, width, height }: { name: string; width: number; height: number }) {
+export default function VectorTape({ name, width, height, fit }: { name: string; width: number; height: number; fit?: boolean }) {
   const id = useId().replace(/[^a-zA-Z0-9]/g, "");
   const p = tapePatterns[name];
   if (!p) return null;
@@ -87,7 +87,7 @@ export default function VectorTape({ name, width, height }: { name: string; widt
   const left = bites.map((b, i) => `${b * s},${yAt(i)}`);
   const right = bites.map((b, i) => `${width - (8 - b) * s},${yAt(i)}`).reverse();
   return (
-    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" style={{ display: "block", filter: "drop-shadow(0 2px 2px rgba(61,50,42,.18))" }} aria-hidden>
+    <svg width="100%" height={fit ? "100%" : height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" style={{ display: "block", filter: "drop-shadow(0 2px 2px rgba(61,50,42,.18))" }} aria-hidden>
       <defs>
         <pattern id={`p${id}`} patternUnits="userSpaceOnUse" width={p.w} height="100" patternTransform={`scale(${s})`}>
           <rect width={p.w} height="100" fill={p.base} />
