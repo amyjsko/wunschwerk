@@ -33,6 +33,8 @@ export default function ImageInsert({ local, onInsert, onClose }: {
   const session = useSession();
   const [cols, setCols] = useState<Collection[]>([]);
   const [colId, setColId] = useState("");
+  /** Quelle, wenn das Bild aus Pinterest stammt */
+  const [meta, setMeta] = useState<{ link?: string; credit?: string; id?: string } | null>(null);
 
   useEffect(() => {
     if (session === undefined) return;
@@ -65,6 +67,7 @@ export default function ImageInsert({ local, onInsert, onClose }: {
 
   function loadFile(f: File | null | undefined) {
     if (!f) return;
+    setMeta(null);
     if (!/^image\/(png|jpeg|webp|gif|avif)$/.test(f.type)) return setError("Bitte ein Bild wählen (PNG, JPG oder WebP).");
     if (f.size > 15 * 1024 * 1024) return setError("Das Bild ist zu groß (höchstens 15 MB).");
     const u = URL.createObjectURL(f);
@@ -106,9 +109,14 @@ export default function ImageInsert({ local, onInsert, onClose }: {
         const res = await fetch(`/api/pin?url=${encodeURIComponent(link)}`);
         const data = await res.json();
         if (!res.ok) setError(data.error);
-        else setErrorOrClose(onInsert({ src: data.src, ratio: data.ratio, link: data.link, credit: data.credit, frame: "polaroid" }));
+        else {
+          setMeta({ link: data.link, credit: data.credit });
+          load(`/api/bild?url=${encodeURIComponent(data.src)}`, () => setBusy(false));
+          return;
+        }
         setBusy(false);
       } else {
+        setMeta(null);
         load(`/api/bild?url=${encodeURIComponent(link)}`, () => setBusy(false));
       }
     } catch {
@@ -153,8 +161,13 @@ export default function ImageInsert({ local, onInsert, onClose }: {
             </div>
             <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
               {col.items.map((i) => (
-                <button key={i.id} title={i.title || "Einfügen"} onClick={() => setErrorOrClose(onInsert({ src: i.src, ratio: i.ratio || 1, link: i.link, credit: i.credit, frame: "polaroid" }))}
-                  className="h-20 shrink-0 overflow-hidden rounded-lg hover:ring-2 hover:ring-rose-500">
+                <button key={i.id} title={i.title || "Einfügen"} onClick={() => {
+                  setMeta({ link: i.link, credit: i.credit, id: i.id });
+                  setFrame("sticker");
+                  setBusy(true);
+                  load(`/api/bild?url=${encodeURIComponent(i.src)}`, () => setBusy(false));
+                }}
+                  className={`h-20 shrink-0 overflow-hidden rounded-lg hover:ring-2 hover:ring-rose-500 ${meta?.id === i.id ? "ring-2 ring-rose-600" : ""}`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={i.src} alt="" referrerPolicy="no-referrer" loading="lazy" className="h-full w-auto" style={{ aspectRatio: String(i.ratio || 1) }} />
                 </button>
@@ -162,7 +175,7 @@ export default function ImageInsert({ local, onInsert, onClose }: {
             </div>
           </div>
         )}
-        <p className="mt-1 text-xs text-neutral-500">Pins erscheinen als kleines Polaroid mit Quellenlink. Nimm bitte nur Bilder, die du verwenden darfst.</p>
+        <p className="mt-1 text-xs text-neutral-500">Klick auf einen Pin, dann kannst du den Hintergrund entfernen und einen Rahmen wählen. Nimm bitte nur Bilder, die du verwenden darfst.</p>
 
         {preview && (
           <>
@@ -190,7 +203,7 @@ export default function ImageInsert({ local, onInsert, onClose }: {
         {error && <p role="alert" className="mt-3 text-sm text-red-600">{error}</p>}
         <div className="mt-4 flex justify-end gap-2">
           <button onClick={onClose} className="px-3 py-2 text-sm text-neutral-500">Abbrechen</button>
-          <button disabled={!preview} onClick={() => preview && setErrorOrClose(onInsert({ ...preview, frame }))} className="rounded-full bg-rose-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-40">Einfügen</button>
+          <button disabled={!preview} onClick={() => preview && setErrorOrClose(onInsert({ ...preview, frame, ...(meta?.link ? { link: meta.link, credit: meta.credit } : {}) }))} className="rounded-full bg-rose-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-40">Einfügen</button>
         </div>
       </div>
     </div>

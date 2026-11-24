@@ -244,7 +244,7 @@ function PictureItem({ item, linked }: { item: DesignItem; linked?: boolean }) {
     <div style={polaroid ? { background: "#fffdf9", padding: `${item.w * 0.05}px ${item.w * 0.05}px ${item.w * (item.credit ? 0.03 : 0.16)}px`, boxShadow: "0 3px 12px rgba(60,40,20,.28)" } : undefined}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={src} alt="" draggable={false} style={{ display: "block", width: "100%", aspectRatio: String(item.ratio || 1), objectFit: "contain", filter: item.frame === "sticker" ? `${outline} drop-shadow(0 3px 4px rgba(60,40,20,.3))` : undefined }} />
-      {item.credit && <div style={{ fontSize: Math.max(9, item.w * 0.05), color: "#7a6a5e", padding: "0.4em 0", textAlign: "center", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>{item.credit} · Pinterest</div>}
+      {polaroid && item.credit && <div style={{ fontSize: Math.max(9, item.w * 0.05), color: "#7a6a5e", padding: "0.4em 0", textAlign: "center", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>{item.credit} · Pinterest</div>}
     </div>
   );
   return linked && safeLink ? <a href={safeLink} target="_blank" rel="noopener noreferrer" className="block">{picture}</a> : picture;
