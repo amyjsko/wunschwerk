@@ -133,3 +133,25 @@ revoke all on function public.cancel_reservation(uuid) from public;
 grant execute on function public.get_shared_list(text) to anon, authenticated;
 grant execute on function public.reserve_wish(text, text, text) to anon, authenticated;
 grant execute on function public.cancel_reservation(uuid) to anon, authenticated;
+
+-- Sammlungen (seit Version 5): gemerkte Pins und Bilder, nur für dich sichtbar.
+-- Die Bilder werden nicht kopiert, gespeichert ist nur der Bild- und Quellenlink.
+create table if not exists public.collections (
+  id uuid primary key default gen_random_uuid(),
+  owner uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  name text not null default '' check (char_length(name) <= 80),
+  items jsonb not null default '[]'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.collections enable row level security;
+
+drop policy if exists "eigene Sammlungen" on public.collections;
+create policy "eigene Sammlungen" on public.collections
+  for all to authenticated
+  using (owner = auth.uid())
+  with check (owner = auth.uid());
+
+grant select, insert, update, delete on public.collections to authenticated;
+revoke all on public.collections from anon;

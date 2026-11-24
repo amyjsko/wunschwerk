@@ -10,11 +10,19 @@ export async function GET(req: Request) {
   const raw = new URL(req.url).searchParams.get("url") ?? "";
   let id: string | undefined;
   try {
-    const u = new URL(raw);
+    let u = new URL(raw);
+    // Kurzlinks aus der Pinterest-App (pin.it/…) leiten über Pinterest auf den Pin weiter
+    const pinHost = (h: string) => h === "pin.it" || h === "api.pinterest.com";
+    for (let hop = 0; hop < 3 && u.protocol === "https:" && pinHost(u.hostname) && !/^\/pin\/[^/]*\d/.test(u.pathname); hop++) {
+      const r = await fetch(u, { redirect: "manual", signal: AbortSignal.timeout(6000) });
+      const loc = r.headers.get("location");
+      if (!loc) break;
+      u = new URL(loc, u);
+    }
     if (u.protocol === "https:" && /^([a-z]{2,3}\.)?pinterest\.(com|de|at|ch|fr|es|it|co\.uk|ca)$/.test(u.hostname))
       id = u.pathname.match(/^\/pin\/(?:[^/]*--)?(\d+)\/?/)?.[1];
   } catch {}
-  if (!id) return NextResponse.json({ error: "Bitte den ganzen Link eines Pins einfügen (pinterest.de/pin/…)." }, { status: 400 });
+  if (!id) return NextResponse.json({ error: "Bitte den ganzen Link eines Pins einfügen (pinterest.de/pin/… oder pin.it/…)." }, { status: 400 });
 
   const link = `https://www.pinterest.com/pin/${id}/`;
   try {
@@ -31,6 +39,7 @@ export async function GET(req: Request) {
       src: image.toString(),
       ratio: Number.isFinite(ratio) && ratio > 0 ? ratio : 1,
       credit: String(d.author_name || "Pinterest").slice(0, 60),
+      title: String(d.title || "").slice(0, 200),
       link,
     });
   } catch {

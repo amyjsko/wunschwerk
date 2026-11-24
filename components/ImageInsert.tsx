@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { prepareImage } from "@/lib/cutout";
+import { useSession } from "@/lib/auth";
+import { listCollections, type Collection } from "@/lib/collections";
 import type { DesignItem } from "@/lib/types";
 
 type NewImage = Pick<DesignItem, "src" | "ratio" | "frame" | "link" | "credit">;
@@ -28,6 +30,26 @@ export default function ImageInsert({ local, onInsert, onClose }: {
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const session = useSession();
+  const [cols, setCols] = useState<Collection[]>([]);
+  const [colId, setColId] = useState("");
+  /** Quelle, wenn das Bild aus Pinterest stammt */
+  const [meta, setMeta] = useState<{ link?: string; credit?: string; id?: string } | null>(null);
+
+  useEffect(() => {
+    if (session === undefined) return;
+    listCollections(session)
+      .then((cs) => {
+        // Im Scrapbook gehen nur Pinterest-Bilder (andere Seiten erlauben das Einbinden oft nicht)
+        const filled = cs
+          .map((c) => ({ ...c, items: c.items.filter((i) => i.src.startsWith("https://i.pinimg.com/")) }))
+          .filter((c) => c.items.length > 0);
+        setCols(filled);
+        if (filled[0]) setColId(filled[0].id);
+      })
+      .catch(() => {});
+  }, [session]);
+  const col = cols.find((c) => c.id === colId);
 
   function load(src: string, done?: () => void) {
     setError("");
@@ -45,6 +67,7 @@ export default function ImageInsert({ local, onInsert, onClose }: {
 
   function loadFile(f: File | null | undefined) {
     if (!f) return;
+    setMeta(null);
     if (!/^image\/(png|jpeg|webp|gif|avif)$/.test(f.type)) return setError("Bitte ein Bild wählen (PNG, JPG oder WebP).");
     if (f.size > 15 * 1024 * 1024) return setError("Das Bild ist zu groß (höchstens 15 MB).");
     const u = URL.createObjectURL(f);
@@ -86,9 +109,14 @@ export default function ImageInsert({ local, onInsert, onClose }: {
         const res = await fetch(`/api/pin?url=${encodeURIComponent(link)}`);
         const data = await res.json();
         if (!res.ok) setError(data.error);
-        else setErrorOrClose(onInsert({ src: data.src, ratio: data.ratio, link: data.link, credit: data.credit, frame: "polaroid" }));
+        else {
+          setMeta({ link: data.link, credit: data.credit });
+          load(`/api/bild?url=${encodeURIComponent(data.src)}`, () => setBusy(false));
+          return;
+        }
         setBusy(false);
       } else {
+        setMeta(null);
         load(`/api/bild?url=${encodeURIComponent(link)}`, () => setBusy(false));
       }
     } catch {
@@ -123,7 +151,31 @@ export default function ImageInsert({ local, onInsert, onClose }: {
           <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Bild-Link oder Pinterest-Pin" className="min-w-0 flex-1 rounded-lg border border-neutral-300 px-3 py-2 text-sm" />
           <button disabled={busy || !url.trim()} className="rounded-lg bg-neutral-900 px-3 py-2 text-sm font-semibold text-white disabled:opacity-40">{busy ? "Lädt…" : "Holen"}</button>
         </form>
-        <p className="mt-1 text-xs text-neutral-500">Pins erscheinen als kleines Polaroid mit Quellenlink. Nimm bitte nur Bilder, die du verwenden darfst.</p>
+        {col && (
+          <div className="mt-3 rounded-xl bg-neutral-50 p-2">
+            <div className="flex items-center justify-between gap-2 text-sm">
+              <span className="font-semibold">📌 Aus deinen Sammlungen</span>
+              <select value={colId} onChange={(e) => setColId(e.target.value)} aria-label="Sammlung" className="min-w-0 rounded-lg border border-neutral-300 bg-white px-2 py-1 text-xs">
+                {cols.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
+              {col.items.map((i) => (
+                <button key={i.id} title={i.title || "Einfügen"} onClick={() => {
+                  setMeta({ link: i.link, credit: i.credit, id: i.id });
+                  setFrame("sticker");
+                  setBusy(true);
+                  load(`/api/bild?url=${encodeURIComponent(i.src)}`, () => setBusy(false));
+                }}
+                  className={`h-20 shrink-0 overflow-hidden rounded-lg hover:ring-2 hover:ring-rose-500 ${meta?.id === i.id ? "ring-2 ring-rose-600" : ""}`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={i.src} alt="" referrerPolicy="no-referrer" loading="lazy" className="h-full w-auto" style={{ aspectRatio: String(i.ratio || 1) }} />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        <p className="mt-1 text-xs text-neutral-500">Klick auf einen Pin, dann kannst du den Hintergrund entfernen und einen Rahmen wählen. Nimm bitte nur Bilder, die du verwenden darfst.</p>
 
         {preview && (
           <>
@@ -151,7 +203,7 @@ export default function ImageInsert({ local, onInsert, onClose }: {
         {error && <p role="alert" className="mt-3 text-sm text-red-600">{error}</p>}
         <div className="mt-4 flex justify-end gap-2">
           <button onClick={onClose} className="px-3 py-2 text-sm text-neutral-500">Abbrechen</button>
-          <button disabled={!preview} onClick={() => preview && setErrorOrClose(onInsert({ ...preview, frame }))} className="rounded-full bg-rose-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-40">Einfügen</button>
+          <button disabled={!preview} onClick={() => preview && setErrorOrClose(onInsert({ ...preview, frame, ...(meta?.link ? { link: meta.link, credit: meta.credit } : {}) }))} className="rounded-full bg-rose-600 px-5 py-2 text-sm font-semibold text-white disabled:opacity-40">Einfügen</button>
         </div>
       </div>
     </div>
