@@ -148,6 +148,7 @@ export default function ScrapbookBoard({ design, wishes, editable, selectedId, o
                 transform: `translate(-50%, -50%) rotate(${item.rot}deg)`,
                 zIndex: item.z,
                 userSelect: "none",
+                touchAction: editable ? "none" : undefined,
               }}
             >
               {hidden ? (

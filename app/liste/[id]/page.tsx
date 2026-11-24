@@ -30,6 +30,14 @@ export default function EditorPage() {
   const [tab, setTab] = useState<"wuensche" | "papier" | "deko" | "extras" | "vorlage">("wuensche");
   const [openWish, setOpenWish] = useState<string | null>(null);
   const [dropHint, setDropHint] = useState(false);
+  const [sheet, setSheet] = useState(false);
+  // Rückgängig: frühere Stände merken (eine Ziehbewegung oder ein Tippschwall = ein Schritt)
+  const listRef = useRef(list);
+  listRef.current = list;
+  const past = useRef<WishList[]>([]);
+  const future = useRef<WishList[]>([]);
+  const lastSnap = useRef({ at: 0, key: "" });
+  const [, setHist] = useState(0);
 
   useEffect(() => {
     if (session === undefined) return;
@@ -51,7 +59,37 @@ export default function EditorPage() {
     }, 600);
   }
 
-  function update(patch: Partial<WishList>) {
+  /** key: gleichartige Änderungen kurz hintereinander (Ziehen, Tippen) zählen als ein Schritt */
+  function snapshot(key?: string) {
+    const cur = listRef.current;
+    const now = Date.now();
+    const same = key && key === lastSnap.current.key && now - lastSnap.current.at < 1000;
+    if (cur && !same) {
+      past.current.push(cur);
+      if (past.current.length > 60) past.current.shift();
+      future.current = [];
+      setHist((h) => h + 1);
+    }
+    lastSnap.current = { at: now, key: key ?? "" };
+  }
+
+  function undo(redo = false) {
+    const from = redo ? future : past;
+    const to = redo ? past : future;
+    const cur = listRef.current;
+    const target = from.current.pop();
+    if (!cur || !target) return;
+    to.current.push(cur);
+    lastSnap.current = { at: 0, key: "" };
+    const next = { ...target, updatedAt: Date.now() };
+    setList(next);
+    persist(next);
+    setSelectedId((sid) => (next.design?.items.some((i) => i.id === sid) ? sid : null));
+    setHist((h) => h + 1);
+  }
+
+  function update(patch: Partial<WishList>, key?: string) {
+    snapshot(key);
     setList((prev) => {
       if (!prev) return prev;
       const next = { ...prev, ...patch, updatedAt: Date.now() };
@@ -61,7 +99,8 @@ export default function EditorPage() {
     });
   }
 
-  function updateDesign(fn: (d: Design) => Design) {
+  function updateDesign(fn: (d: Design) => Design, key?: string) {
+    snapshot(key);
     setList((prev) => {
       if (!prev?.design) return prev;
       const next = { ...prev, design: fn(prev.design), updatedAt: Date.now() };
@@ -71,7 +110,7 @@ export default function EditorPage() {
   }
 
   const changeItem = (itemId: string, patch: Partial<DesignItem>) =>
-    updateDesign((d) => ({ ...d, items: d.items.map((i) => (i.id === itemId ? { ...i, ...patch } : i)) }));
+    updateDesign((d) => ({ ...d, items: d.items.map((i) => (i.id === itemId ? { ...i, ...patch } : i)) }), `item:${itemId}:${Object.keys(patch).sort().join()}`);
 
   function addItem(item: Omit<DesignItem, "id" | "z" | "x" | "y" | "rot">, at?: { x: number; y: number }) {
     const id = uid();
@@ -90,6 +129,7 @@ export default function EditorPage() {
       ],
     }));
     setSelectedId(id);
+    setSheet(false);
   }
 
   function addSticker(sid: string, at?: { x: number; y: number }) {
@@ -110,6 +150,7 @@ export default function EditorPage() {
         : { ...d, items: [...d.items, { id: itemId, kind: "wish", wishId, ...pos, w: WISH_W, rot: Math.round((Math.random() - 0.5) * 8), z }] };
     });
     setSelectedId(itemId);
+    setSheet(false);
   }
 
   function onDrop(e: React.DragEvent) {
@@ -171,6 +212,15 @@ export default function EditorPage() {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
       if (t.closest("input, textarea, select, [contenteditable]")) return;
+      const mod = e.ctrlKey || e.metaKey;
+      if (mod && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        return undo(e.shiftKey);
+      }
+      if (mod && e.key.toLowerCase() === "y") {
+        e.preventDefault();
+        return undo(true);
+      }
       if ((e.key === "Delete" || e.key === "Backspace") && selectedId) deleteSelected();
       if (e.key === "Escape") setSelectedId(null);
     };
@@ -191,7 +241,7 @@ export default function EditorPage() {
   const selected = scrap ? list.design!.items.find((i) => i.id === selectedId) ?? null : null;
 
   const setWish = (wid: string, patch: Partial<Wish>) =>
-    update({ wishes: list.wishes.map((w) => (w.id === wid ? { ...w, ...patch } : w)) });
+    update({ wishes: list.wishes.map((w) => (w.id === wid ? { ...w, ...patch } : w)) }, `wish:${wid}:${Object.keys(patch).join()}`);
   const move = (i: number, dir: -1 | 1) => {
     const ws = [...list.wishes];
     const j = i + dir;
@@ -256,11 +306,30 @@ export default function EditorPage() {
     />
   );
 
+  const undoButtons = (
+    <div className="flex items-center gap-0.5">
+      <button onClick={() => undo()} disabled={!past.current.length} title="Rückgängig (Strg + Z)" aria-label="Rückgängig"
+        className="rounded-full px-2 py-1 text-lg leading-none text-neutral-600 hover:bg-neutral-100 disabled:opacity-25">↶</button>
+      <button onClick={() => undo(true)} disabled={!future.current.length} title="Wiederholen (Strg + Umschalt + Z)" aria-label="Wiederholen"
+        className="rounded-full px-2 py-1 text-lg leading-none text-neutral-600 hover:bg-neutral-100 disabled:opacity-25">↷</button>
+    </div>
+  );
+
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[380px_1fr]">
-      <aside className="no-print border-b border-neutral-200 bg-white lg:h-screen lg:overflow-y-auto lg:border-b-0 lg:border-r">
+      <header className="no-print sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-neutral-200 bg-white/95 px-4 py-2 backdrop-blur lg:hidden">
+        <Link href="/" className="text-sm text-neutral-500">← Übersicht</Link>
+        {undoButtons}
+        <button onClick={() => setSharing(true)} className="rounded-full bg-rose-600 px-4 py-1.5 text-sm font-semibold text-white">Teilen</button>
+      </header>
+
+      <aside className={`no-print border-neutral-200 bg-white ${sheet ? "fixed inset-x-0 bottom-16 z-40 max-h-[62vh] overflow-y-auto rounded-t-2xl border-t shadow-[0_-8px_30px_rgba(0,0,0,.15)]" : "hidden"} lg:static lg:block lg:h-screen lg:max-h-none lg:overflow-y-auto lg:rounded-none lg:border-r lg:border-t-0 lg:shadow-none`}>
         <div className="sticky top-0 z-20 border-b border-neutral-200 bg-white/95 px-5 pb-3 pt-4 backdrop-blur">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between lg:hidden">
+            <b className="text-sm">{tabs.find((t) => t.id === activeTab)?.name}</b>
+            <button onClick={() => setSheet(false)} className="rounded-full px-2 py-1 text-neutral-500" aria-label="Schließen">✕</button>
+          </div>
+          <div className="hidden items-center justify-between gap-2 lg:flex">
             <div className="min-w-0">
               <Link href="/" className="text-sm text-neutral-500 hover:text-rose-600">← Übersicht</Link>
               {list.slug && (
@@ -269,7 +338,8 @@ export default function EditorPage() {
                 </div>
               )}
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
+              {undoButtons}
               <button onClick={() => window.print()} className="rounded-full border border-neutral-300 px-3 py-1.5 text-sm hover:bg-neutral-50">
                 Drucken
               </button>
@@ -294,7 +364,7 @@ export default function EditorPage() {
             </button>
           </div>
 
-          <nav className="mt-3 grid gap-1 text-xs font-semibold" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
+          <nav className="mt-3 hidden gap-1 text-xs font-semibold lg:grid" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
             {tabs.map((t) => (
               <button key={t.id} onClick={(e) => { setTab(t.id); e.currentTarget.closest("aside")?.scrollTo({ top: 0 }); }} aria-pressed={activeTab === t.id}
                 className={`flex flex-col items-center gap-0.5 rounded-lg py-1.5 ${activeTab === t.id ? "bg-rose-50 text-rose-800 ring-1 ring-rose-200" : "text-neutral-500 hover:bg-neutral-50"}`}>
@@ -304,7 +374,7 @@ export default function EditorPage() {
             ))}
           </nav>
 
-          {scrap && selected && <div className="mt-3">{tools("auswahl")}</div>}
+          {scrap && selected && <div className="mt-3 hidden lg:block">{tools("auswahl")}</div>}
         </div>
 
         <div className="p-5">
@@ -343,13 +413,13 @@ export default function EditorPage() {
               <section className="space-y-3">
                 <label className="block">
                   <span className={label}>Titel</span>
-                  <input value={list.title} onChange={(e) => update({ title: e.target.value })}
+                  <input value={list.title} onChange={(e) => update({ title: e.target.value }, "title")}
                     className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2" />
                 </label>
                 <label className="block">
                   <span className={label}>Untertitel</span>
                   <input value={list.subtitle} placeholder="z. B. Von Lena, Weihnachten 2026"
-                    onChange={(e) => update({ subtitle: e.target.value })}
+                    onChange={(e) => update({ subtitle: e.target.value }, "subtitle")}
                     className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2" />
                 </label>
               </section>
@@ -448,7 +518,27 @@ export default function EditorPage() {
         </div>
       </aside>
 
-      <main className="p-4 sm:p-8 lg:h-screen lg:overflow-y-auto">
+      {scrap && selected && !sheet && (
+        <div className="no-print fixed inset-x-2 bottom-[4.5rem] z-30 max-h-[45vh] overflow-y-auto rounded-xl bg-white shadow-xl lg:hidden">{tools("auswahl")}</div>
+      )}
+
+      <nav className="no-print fixed inset-x-0 bottom-0 z-40 grid h-16 border-t border-neutral-200 bg-white lg:hidden" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
+        {tabs.map((t) => (
+          <button key={t.id}
+            onClick={() => {
+              if (sheet && activeTab === t.id) return setSheet(false);
+              setTab(t.id);
+              setSheet(true);
+            }}
+            aria-pressed={sheet && activeTab === t.id}
+            className={`flex flex-col items-center justify-center gap-0.5 text-[11px] font-semibold ${sheet && activeTab === t.id ? "text-rose-700" : "text-neutral-500"}`}>
+            <span className="text-xl leading-none">{t.icon}</span>
+            {t.name}
+          </button>
+        ))}
+      </nav>
+
+      <main className="p-4 pb-24 sm:p-8 sm:pb-24 lg:h-screen lg:overflow-y-auto lg:pb-8">
         {scrap ? (
           <div
             className={`relative mx-auto max-w-3xl rounded-2xl transition ${dropHint ? "ring-4 ring-rose-300 ring-offset-4" : ""}`}
