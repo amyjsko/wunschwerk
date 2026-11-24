@@ -8,6 +8,7 @@ import { useSession } from "@/lib/auth";
 import { createList, listLists, saveList } from "@/lib/store";
 import { templates } from "@/lib/templates";
 import { uid } from "@/lib/format";
+import { addToCollection, createCollection, itemFromLink, largerPin, listCollections, measure, type Collection } from "@/lib/collections";
 import type { WishList } from "@/lib/types";
 
 export default function MerkenPage() {
@@ -16,11 +17,16 @@ export default function MerkenPage() {
   const [lists, setLists] = useState<WishList[]>([]);
   const [target, setTarget] = useState("neu");
   const [busy, setBusy] = useState(false);
+  const [ziel, setZiel] = useState<"zettel" | "sammlung">("zettel");
+  const [cols, setCols] = useState<Collection[]>([]);
+  const [colTarget, setColTarget] = useState("neu");
+  const [colName, setColName] = useState("");
   const session = useSession();
 
   useEffect(() => {
     const c = decodeCaptured(window.location.hash);
     setItem(c ? { ...c, price: c.price ? String(parsePrice(c.price) ?? "").replace(".", ",") : "" } : null);
+    if (c && /pinterest\.|pin\.it/i.test(`${c.shop} ${c.url}`)) setZiel("sammlung");
   }, []);
 
   useEffect(() => {
@@ -31,13 +37,43 @@ export default function MerkenPage() {
         if (ls[0]) setTarget(ls[0].id);
       })
       .catch(() => {});
+    listCollections(session)
+      .then((cs) => {
+        setCols(cs);
+        if (cs[0]) setColTarget(cs[0].id);
+      })
+      .catch(() => {});
   }, [session]);
+
+  async function saveToCollection() {
+    if (!item || session === undefined) return;
+    setBusy(true);
+    try {
+      let entry;
+      try {
+        entry = item.url ? await itemFromLink(item.url) : undefined;
+      } catch {}
+      if (!entry) {
+        if (!item.image) throw new Error("Auf dieser Seite wurde kein Bild gefunden.");
+        const big = largerPin(item.image);
+        let src = big, ratio = await measure(big);
+        if (!ratio) (src = item.image), (ratio = (await measure(item.image)) || 1);
+        entry = { src, ratio, link: item.url, title: item.title?.trim() || undefined, credit: item.shop };
+      }
+      const col = cols.find((c) => c.id === colTarget) ?? (await createCollection(session, colName || "Meine Pins"));
+      await addToCollection(col, entry);
+      router.push(`/sammlungen/${col.id}`);
+    } catch (e) {
+      setBusy(false);
+      alert((e as Error)?.message || "Das Merken hat nicht geklappt. Bitte versuch es noch einmal.");
+    }
+  }
 
   if (item === undefined || session === undefined) return null;
   if (item === null)
     return (
       <main className="py-24 text-center">
-        <p>Hier ist nichts angekommen. Klick auf einer Produktseite auf „Wunschwerk merken“.</p>
+        <p>Hier ist nichts angekommen. Klick auf einer Produktseite oder einem Pin auf „Wunschwerk merken“.</p>
         <Link href="/" className="text-rose-600 underline">Zur Startseite</Link>
       </main>
     );
@@ -85,7 +121,7 @@ export default function MerkenPage() {
 
   return (
     <main className="mx-auto max-w-md px-4 py-12">
-      <h1 className="font-serif text-3xl">Wunsch merken</h1>
+      <h1 className="font-serif text-3xl">Merken</h1>
       <div className="mt-6 space-y-3 rounded-2xl border border-neutral-200 bg-white p-4">
         <div className="flex gap-3">
           {item.image ? (
@@ -97,25 +133,58 @@ export default function MerkenPage() {
           <textarea value={item.title ?? ""} rows={3} onChange={(e) => setItem({ ...item, title: e.target.value })}
             className="w-full rounded border border-neutral-300 px-2 py-1 text-sm" />
         </div>
-        <div className="flex gap-2 text-sm">
+        {ziel === "zettel" && <div className="flex gap-2 text-sm">
           <input value={item.price ?? ""} placeholder="Preis" onChange={(e) => setItem({ ...item, price: e.target.value })}
             className="w-1/3 rounded border border-neutral-300 px-2 py-1" />
           <span className="self-center text-neutral-500">{item.shop}</span>
+        </div>}
+        <div className="grid grid-cols-2 gap-1 rounded-full bg-neutral-100 p-1 text-sm">
+          {([["zettel", "🎁 Wunschzettel"], ["sammlung", "📌 Sammlung"]] as const).map(([id, name]) => (
+            <button key={id} onClick={() => setZiel(id)} aria-pressed={ziel === id}
+              className={`rounded-full py-1.5 font-semibold ${ziel === id ? "bg-white shadow-sm" : "text-neutral-500"}`}>
+              {name}
+            </button>
+          ))}
         </div>
-        <label className="block text-sm">
-          <span className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Auf welchen Wunschzettel?</span>
-          <select value={target} onChange={(e) => setTarget(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2">
-            {lists.map((l) => (
-              <option key={l.id} value={l.id}>{l.title}</option>
-            ))}
-            <option value="neu">+ Neuer Wunschzettel</option>
-          </select>
-        </label>
-        <button onClick={save} disabled={busy || !item.title?.trim()}
-          className="w-full rounded-full bg-rose-600 py-2 font-semibold text-white disabled:opacity-40">
-          {busy ? "Wird gemerkt…" : "Merken"}
-        </button>
+        {ziel === "zettel" ? (
+          <>
+            <label className="block text-sm">
+              <span className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Auf welchen Wunschzettel?</span>
+              <select value={target} onChange={(e) => setTarget(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2">
+                {lists.map((l) => (
+                  <option key={l.id} value={l.id}>{l.title}</option>
+                ))}
+                <option value="neu">+ Neuer Wunschzettel</option>
+              </select>
+            </label>
+            <button onClick={save} disabled={busy || !item.title?.trim()}
+              className="w-full rounded-full bg-rose-600 py-2 font-semibold text-white disabled:opacity-40">
+              {busy ? "Wird gemerkt…" : "Merken"}
+            </button>
+          </>
+        ) : (
+          <>
+            <label className="block text-sm">
+              <span className="text-xs font-semibold uppercase tracking-wide text-neutral-500">In welche Sammlung?</span>
+              <select value={colTarget} onChange={(e) => setColTarget(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2">
+                {cols.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name} ({c.items.length})</option>
+                ))}
+                <option value="neu">+ Neue Sammlung</option>
+              </select>
+            </label>
+            {colTarget === "neu" && (
+              <input value={colName} onChange={(e) => setColName(e.target.value)} placeholder="Name, z. B. Wohnzimmer-Ideen" maxLength={80}
+                className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm" />
+            )}
+            <button onClick={saveToCollection} disabled={busy}
+              className="w-full rounded-full bg-rose-600 py-2 font-semibold text-white disabled:opacity-40">
+              {busy ? "Wird gemerkt…" : "In Sammlung merken"}
+            </button>
+          </>
+        )}
       </div>
     </main>
   );

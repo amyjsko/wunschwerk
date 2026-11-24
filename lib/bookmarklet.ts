@@ -61,10 +61,17 @@ function collect(origin: string) {
   title = title || clean(meta("og:title", "twitter:title")) || h1 || pageTitle;
   const amazonImg = d.querySelector<HTMLImageElement>("#landingImage, #imgBlkFront, #main-image");
   const priceEl = d.querySelector<HTMLElement>('[itemprop="price"]');
+  const pinImg = /pinterest\./.test(location.hostname)
+    ? Array.from(d.querySelectorAll<HTMLImageElement>('img[src*="i.pinimg.com"]')).sort(
+        (a, b) => b.width * b.height - a.width * a.height,
+      )[0]
+    : undefined;
   const data = {
     url: location.href.split("#")[0],
     title,
     image:
+      pinImg?.currentSrc ||
+      pinImg?.src ||
       image ||
       meta("og:image", "twitter:image") ||
       amazonImg?.getAttribute("data-old-hires") ||
