@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { fontMap, PAGE_H, PAGE_W, paperMap } from "@/lib/design";
 import { formatPrice } from "@/lib/format";
 import type { Design, DesignItem, Wish } from "@/lib/types";
-import { stickerMap, WashiTape } from "./stickers";
-import { GiftTag } from "./tags";
+import { isTape, stickerMap, WashiTape } from "./stickers";
+import VectorTape from "./VectorTape";
 
 export interface ReserveProps {
   reserved: Record<string, string>;
@@ -34,7 +34,7 @@ export function proxied(src?: string) {
 }
 
 export function pageHeight(design: Design) {
-  const bottom = Math.max(0, ...design.items.map((i) => i.y + (i.kind === "wish" ? i.w * 0.85 : i.kind === "bild" ? (i.w / (i.ratio ?? 1)) * 0.6 : i.w * 0.5)));
+  const bottom = Math.max(0, ...design.items.map((i) => i.y + (i.kind === "wish" ? i.w * 0.85 : i.kind === "image" ? (i.w / (i.ratio || 1)) * 0.5 : i.w * 0.5)));
   return Math.max(PAGE_H, Math.ceil((bottom + 120) / 100) * 100);
 }
 
@@ -101,7 +101,7 @@ export default function ScrapbookBoard({ design, wishes, editable, selectedId, o
       let rot = r0 + ((a - a0) * 180) / Math.PI;
       rot = ((rot + 540) % 360) - 180;
       if (Math.abs(rot) < 2.5) rot = 0;
-      onChangeItem?.(item.id, { rot: Math.round(rot * 10) / 10, w: Math.round(Math.min(1200, Math.max(item.kind === "sticker" && stickerMap[item.sticker ?? ""]?.washi ? 60 : 30, (w0 * d) / d0))) });
+      onChangeItem?.(item.id, { rot: Math.round(rot * 10) / 10, w: Math.round(Math.min(1200, Math.max(item.kind === "sticker" && isTape(stickerMap[item.sticker ?? ""]) ? 60 : 30, (w0 * d) / d0))) });
     };
     const up = () => {
       el.removeEventListener("pointermove", move);
@@ -140,7 +140,7 @@ export default function ScrapbookBoard({ design, wishes, editable, selectedId, o
               key={item.id}
               title={hidden ? "Für Gäste ausgeblendet" : undefined}
               onPointerDown={(e) => startMove(e, item)}
-              className={`absolute ${hidden ? "export-hide" : ""} ${editable ? "cursor-grab active:cursor-grabbing" : item.kind === "wish" ? "" : "pointer-events-none"}`}
+              className={`absolute ${hidden ? "export-hide" : ""} ${editable ? "cursor-grab active:cursor-grabbing" : item.kind === "wish" || item.link ? "" : "pointer-events-none"}`}
               style={{
                 left: item.x,
                 top: item.y,
@@ -189,24 +189,27 @@ function renderItem(item: DesignItem, wishById: Record<string, Wish>, reserve: R
     const def = stickerMap[item.sticker ?? ""];
     if (!def) return null;
     if (def.washi) return <WashiTape name={def.washi} height={item.h ?? def.h ?? 42} />;
+    if (def.tape) return <VectorTape name={def.tape} width={item.w} height={item.h ?? def.h ?? 42} />;
+    const l = def.label;
     return (
-      <div style={{ width: "100%", aspectRatio: String(def.ratio) }} aria-hidden>
-        {def.draw(item.color ?? def.color)}
+      <div style={{ position: "relative", width: "100%", aspectRatio: String(def.ratio) }}>
+        <div aria-hidden style={{ position: "absolute", inset: 0 }}>{def.draw(item.color ?? def.color)}</div>
+        {l && (
+          <div
+            style={{
+              position: "absolute", left: `${l.left ?? 0}%`, right: "4%", top: `${l.top ?? 0}%`, bottom: `${l.bottom ?? 0}%`,
+              display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", whiteSpace: "pre-wrap", overflowWrap: "anywhere",
+              fontFamily: (fontMap[item.font ?? "hand"] ?? fontMap.hand).family, lineHeight: 1.05, color: l.color,
+              fontSize: item.w * l.size * (fontMap[item.font ?? "hand"] ?? fontMap.hand).size * Math.min(1, Math.sqrt(14 / Math.max(14, (item.text ?? l.text).length))),
+            }}
+          >
+            {item.text ?? l.text}
+          </div>
+        )}
       </div>
     );
   }
-  if (item.kind === "tag") return <GiftTag item={item} />;
-  if (item.kind === "bild") {
-    if (!item.src) return null;
-    return (
-      <div
-        style={item.rahmen ? { background: "#fffdf9", padding: "5%", paddingBottom: "14%", boxShadow: "0 3px 10px rgba(60,40,20,.25)" } : { filter: "drop-shadow(0 2px 3px rgba(60,40,20,.2))" }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={item.src} alt="" draggable={false} style={{ display: "block", width: "100%", aspectRatio: String(item.ratio ?? 1), objectFit: "contain" }} />
-      </div>
-    );
-  }
+  if (item.kind === "image") return <PictureItem item={item} linked={linked} />;
   if (item.kind === "text") {
     const f = fontMap[item.font ?? "hand"] ?? fontMap.hand;
     return (
@@ -228,6 +231,23 @@ function renderItem(item: DesignItem, wishById: Record<string, Wish>, reserve: R
   const w = wishById[item.wishId ?? ""];
   if (!w) return null;
   return <Polaroid wish={w} width={item.w} reserve={reserve} linked={linked} />;
+}
+
+function PictureItem({ item, linked }: { item: DesignItem; linked?: boolean }) {
+  const src = item.src?.startsWith("data:image/") ? item.src : item.src?.startsWith("https://i.pinimg.com/") ? proxied(item.src) : undefined;
+  if (!src) return null;
+  const polaroid = item.frame === "polaroid";
+  const r = Math.max(2, item.w * 0.015);
+  const outline = [[r, 0], [-r, 0], [0, r], [0, -r]].map(([a, b]) => `drop-shadow(${a}px ${b}px 0 #fffdf9)`).join(" ");
+  const safeLink = item.link?.startsWith("https://www.pinterest.com/pin/") ? item.link : undefined;
+  const picture = (
+    <div style={polaroid ? { background: "#fffdf9", padding: `${item.w * 0.05}px ${item.w * 0.05}px ${item.w * (item.credit ? 0.03 : 0.16)}px`, boxShadow: "0 3px 12px rgba(60,40,20,.28)" } : undefined}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt="" draggable={false} style={{ display: "block", width: "100%", aspectRatio: String(item.ratio || 1), objectFit: "contain", filter: item.frame === "sticker" ? `${outline} drop-shadow(0 3px 4px rgba(60,40,20,.3))` : undefined }} />
+      {item.credit && <div style={{ fontSize: Math.max(9, item.w * 0.05), color: "#7a6a5e", padding: "0.4em 0", textAlign: "center", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>{item.credit} · Pinterest</div>}
+    </div>
+  );
+  return linked && safeLink ? <a href={safeLink} target="_blank" rel="noopener noreferrer" className="block">{picture}</a> : picture;
 }
 
 function Polaroid({ wish, width, reserve, linked }: { wish: Wish; width: number; reserve?: ReserveProps; linked?: boolean }) {
