@@ -2,6 +2,7 @@
    und sich einfärben lässt. */
 
 import { extraStickers } from "./stickersExtra";
+import { deko2 } from "./deko2";
 
 export type Occasion = "weihnachten" | "alltag" | "geburtstag" | "hochzeit";
 
@@ -325,6 +326,14 @@ export const stickers: StickerDef[] = [
     group: s.id === "notiz" || s.id === "etikett" ? ("zettel" as const) : s.group === "anlass" ? ("deko" as const) : s.group,
   })),
   ...extraStickers,
+  // Washi-Tapes mit Papierstruktur (Bilder in public/washi)
+  ...([
+    ["x-tartan", "Schottenkaro (Papier)"], ["x-vichy", "Vichy Rot (Papier)"], ["x-zuckerstange", "Zuckerstange (Papier)"],
+    ["x-flocken", "Schneeflocken (Papier)"], ["x-sterne", "Goldsterne (Papier)"], ["x-tanne", "Tannenzweig (Papier)"],
+  ] as const).map(([id, name]): StickerDef => ({
+    id: `washi-${id}`, name: `Washi-Tape ${name}`, ratio: 4, w: 220, h: 42, color: "", group: "tape", washi: id, occasions: ["weihnachten"], draw: washi(id),
+  })),
+  ...deko2,
 ];
 
 export const isTape = (s?: StickerDef) => !!(s?.washi || s?.tape);

@@ -125,6 +125,31 @@ export const papers: { id: PaperId; name: string; style: React.CSSProperties; da
   },
 ];
 
+papers.push(
+  {
+    id: "vichyrot", name: "Vichy Rot",
+    style: {
+      backgroundColor: "#fbf6ec",
+      backgroundImage: "linear-gradient(90deg, rgba(168,50,42,.28) 50%, transparent 50%), linear-gradient(rgba(168,50,42,.28) 50%, transparent 50%)",
+      backgroundSize: "56px 56px",
+    },
+  },
+  {
+    id: "zuckerstange", name: "Zuckerstange",
+    style: { backgroundColor: "#fbf4e8", backgroundImage: "repeating-linear-gradient(-45deg, rgba(168,50,42,.18) 0 22px, transparent 22px 64px)" },
+  },
+  {
+    id: "schneekraft", name: "Kraft mit Schnee",
+    style: {
+      backgroundColor: "#c39a6b",
+      backgroundImage:
+        "radial-gradient(rgba(255,255,255,.85) 2.5px, transparent 3px), radial-gradient(rgba(255,255,255,.55) 1.5px, transparent 2px), radial-gradient(rgba(90,60,30,.12) 1px, transparent 1.5px)",
+      backgroundSize: "80px 80px, 43px 43px, 7px 7px",
+      backgroundPosition: "0 0, 21px 17px, 0 0",
+    },
+  },
+);
+
 export const paperMap = Object.fromEntries(papers.map((p) => [p.id, p])) as Record<PaperId, (typeof papers)[number]>;
 
 export const fonts: { id: FontId; name: string; family: string; size: number }[] = [
@@ -136,6 +161,8 @@ export const fonts: { id: FontId; name: string; family: string; size: number }[]
   { id: "weihnacht", name: "Weihnacht", family: "var(--font-weihnacht), cursive", size: 0.95 },
   { id: "maschine", name: "Schreibmaschine", family: "var(--font-maschine), monospace", size: 0.72 },
   { id: "schwung", name: "Nostalgie", family: "var(--font-schwung), cursive", size: 0.9 },
+  { id: "feder", name: "Feder", family: "var(--font-feder), cursive", size: 0.6 },
+  { id: "amatic", name: "Kreide", family: "var(--font-amatic), sans-serif", size: 1.15 },
 ];
 
 export const fontMap = Object.fromEntries(fonts.map((f) => [f.id, f])) as Record<FontId, (typeof fonts)[number]>;

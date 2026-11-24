@@ -49,8 +49,8 @@ export interface SharedList extends Pick<WishList, "title" | "subtitle" | "templ
   reservations?: Reservation[];
 }
 
-export type PaperId = "creme" | "kariert" | "punkte" | "liniert" | "kraft" | "rosa" | "salbei" | "nacht" | "kraftsterne" | "tartan" | "schnee" | "goldpunkte";
-export type FontId = "hand" | "marker" | "schreib" | "serif" | "rund" | "weihnacht" | "maschine" | "schwung";
+export type PaperId = "creme" | "kariert" | "punkte" | "liniert" | "kraft" | "rosa" | "salbei" | "nacht" | "kraftsterne" | "tartan" | "schnee" | "goldpunkte" | "zuckerstange" | "vichyrot" | "schneekraft";
+export type FontId = "hand" | "marker" | "schreib" | "serif" | "rund" | "weihnacht" | "maschine" | "schwung" | "feder" | "amatic";
 
 export interface DesignItem {
   id: string;
