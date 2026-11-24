@@ -8,7 +8,7 @@ import BookmarkletButton from "@/components/BookmarkletButton";
 import ShareDialog from "@/components/ShareDialog";
 import ScrapbookBoard from "@/components/ScrapbookBoard";
 import ScrapbookTools from "@/components/ScrapbookTools";
-import { stickerMap } from "@/components/stickers";
+import { isTape, stickerMap } from "@/components/stickers";
 import { createDesign, paperMap, syncDesign } from "@/lib/design";
 import { uid } from "@/lib/format";
 import { useSession } from "@/lib/auth";
@@ -228,7 +228,20 @@ export default function EditorPage() {
               }
               onAddSticker={(sid) => {
                 const def = stickerMap[sid];
-                addItem({ kind: "sticker", sticker: sid, w: def?.w ?? 100, ...(def?.washi ? { h: def.h } : {}) });
+                addItem({ kind: "sticker", sticker: sid, w: def?.w ?? 100, ...(isTape(def) ? { h: def.h } : {}), ...(def?.label ? { text: def.label.text } : {}) });
+              }}
+              local={!list.slug}
+              startOccasion={list.template === "weihnachten" || list.template === "geburtstag" || list.template === "hochzeit" ? list.template : "alle"}
+              onAddImage={(img) => {
+                // Browser-Speicher und Datenbankzeile klein halten
+                const used = list.design!.items.reduce((n, i) => n + (i.src?.length ?? 0), 0);
+                const stored = list.slug ? 0 : JSON.stringify(localStorage).length;
+                const size = img.src?.length ?? 0;
+                if (used + size > 2_000_000 || stored + size > 4_000_000)
+                  return "Für weitere eigene Bilder ist kein Platz mehr. Entferne bitte erst ein anderes Bild.";
+                const ratio = img.ratio || 1;
+                addItem({ kind: "image", ...img, w: Math.round(ratio >= 1 ? 280 : 280 * Math.max(0.4, ratio)) });
+                return null;
               }}
               onAddText={() => addItem({ kind: "text", text: "Dein Text", font: "hand", w: 280 })}
               onChangeSelected={(patch) => selectedId && changeItem(selectedId, patch)}

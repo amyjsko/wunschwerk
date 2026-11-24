@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Cormorant_Garamond, Great_Vibes, Fredoka, Caveat, Permanent_Marker } from "next/font/google";
+import { Inter, Cormorant_Garamond, Great_Vibes, Fredoka, Caveat, Permanent_Marker, Mountains_of_Christmas, Special_Elite, Berkshire_Swash, Homemade_Apple, Amatic_SC } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -9,6 +9,12 @@ const fredoka = Fredoka({ subsets: ["latin"], variable: "--font-fredoka" });
 // Handschrift: als --font-caveat geladen, globals.css stellt sie als --font-hand bereit
 const caveat = Caveat({ subsets: ["latin"], variable: "--font-caveat" });
 const marker = Permanent_Marker({ subsets: ["latin"], weight: "400", variable: "--font-marker" });
+// Nur im Scrapbook gebraucht, darum nicht vorab laden
+const weihnacht = Mountains_of_Christmas({ subsets: ["latin"], weight: "700", variable: "--font-weihnacht", preload: false });
+const maschine = Special_Elite({ subsets: ["latin"], weight: "400", variable: "--font-maschine", preload: false });
+const feder = Homemade_Apple({ subsets: ["latin"], weight: "400", variable: "--font-feder", preload: false });
+const amatic = Amatic_SC({ subsets: ["latin"], weight: ["400", "700"], variable: "--font-amatic", preload: false });
+const schwung = Berkshire_Swash({ subsets: ["latin"], weight: "400", variable: "--font-schwung", preload: false });
 
 export const metadata: Metadata = {
   title: "Wunschwerk – Wünsche sammeln, schön gestalten, teilen",
@@ -19,7 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="de"
-      className={`${inter.variable} ${cormorant.variable} ${script.variable} ${fredoka.variable} ${caveat.variable} ${marker.variable}`}
+      className={`${inter.variable} ${cormorant.variable} ${script.variable} ${fredoka.variable} ${caveat.variable} ${marker.variable} ${weihnacht.variable} ${maschine.variable} ${schwung.variable} ${feder.variable} ${amatic.variable}`}
     >
       <body className="font-sans antialiased min-h-screen">{children}</body>
     </html>

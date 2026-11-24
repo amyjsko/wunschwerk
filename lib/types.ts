@@ -49,12 +49,12 @@ export interface SharedList extends Pick<WishList, "title" | "subtitle" | "templ
   reservations?: Reservation[];
 }
 
-export type PaperId = "creme" | "kariert" | "punkte" | "liniert" | "kraft" | "rosa" | "salbei" | "nacht";
-export type FontId = "hand" | "marker" | "schreib" | "serif" | "rund";
+export type PaperId = "creme" | "kariert" | "punkte" | "liniert" | "kraft" | "rosa" | "salbei" | "nacht" | "kraftsterne" | "tartan" | "schnee" | "goldpunkte" | "zuckerstange" | "vichyrot" | "schneekraft";
+export type FontId = "hand" | "marker" | "schreib" | "serif" | "rund" | "weihnacht" | "maschine" | "schwung" | "feder" | "amatic";
 
 export interface DesignItem {
   id: string;
-  kind: "wish" | "sticker" | "text";
+  kind: "wish" | "sticker" | "text" | "image";
   /** Mittelpunkt auf der Seite (Seite ist 1000 × 1400) */
   x: number;
   y: number;
@@ -70,6 +70,14 @@ export interface DesignItem {
   color?: string;
   /** Dicke von Washi-Tape auf der Seite */
   h?: number;
+  /** Eigenes Bild: Daten-URL, oder Link bei Pinterest-Pins */
+  src?: string;
+  /** Seitenverhältnis Breite / Höhe bei Bildern */
+  ratio?: number;
+  frame?: "ohne" | "sticker" | "polaroid";
+  /** Quelle bei Pins */
+  link?: string;
+  credit?: string;
 }
 
 export interface Design {

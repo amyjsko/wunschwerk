@@ -5,6 +5,11 @@ export const PAGE_W = 1000;
 export const PAGE_H = 1400;
 export const WISH_W = 250;
 
+/** Nahtlose Kachel als Hintergrundbild */
+function svg(w: number, h: number, inner: string) {
+  return `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='${w}' height='${h}'>${inner}</svg>`)}")`;
+}
+
 export const papers: { id: PaperId; name: string; style: React.CSSProperties; dark?: boolean }[] = [
   {
     id: "creme",
@@ -82,7 +87,68 @@ export const papers: { id: PaperId; name: string; style: React.CSSProperties; da
       backgroundPosition: "0 0, 20px 13px",
     },
   },
+  {
+    id: "kraftsterne",
+    name: "Kraft & Sterne",
+    style: {
+      backgroundColor: "#c8a67c",
+      backgroundImage: svg(160, 160, "<g fill='#fff6e4' opacity='.75'><path d='M40 22l4 10 11 1-8 7 2 11-9-6-9 6 2-11-8-7 11-1z'/><path d='M118 98l3 8 9 1-7 5 2 9-7-5-8 5 3-9-7-5 9-1z'/><circle cx='108' cy='34' r='3'/><circle cx='28' cy='120' r='3'/><circle cx='74' cy='78' r='2'/></g>"),
+    },
+  },
+  {
+    id: "tartan",
+    name: "Tartan",
+    dark: true,
+    style: {
+      backgroundColor: "#7d2a33",
+      backgroundImage: svg(180, 180, "<rect x='30' width='50' height='180' fill='#2f5040' opacity='.6'/><rect y='30' width='180' height='50' fill='#2f5040' opacity='.5'/><path d='M55 0V180M0 55H180' stroke='#f0e2c4' stroke-width='2' opacity='.55'/><path d='M130 0V180M0 130H180' stroke='#d8b25c' stroke-width='4' opacity='.65'/>"),
+    },
+  },
+  {
+    id: "schnee",
+    name: "Schneeflocken",
+    style: {
+      backgroundColor: "#faf4e8",
+      backgroundImage: svg(180, 180, "<g stroke='#a9bec9' stroke-width='2.5' stroke-linecap='round' opacity='.7'><g transform='translate(45 48)'><path d='M0-18V18M-16-9L16 9M-16 9L16-9'/></g><g transform='translate(134 124)'><path d='M0-13V13M-11-6L11 6M-11 6L11-6'/></g></g><g fill='#b9cbd4'><circle cx='120' cy='38' r='3'/><circle cx='34' cy='132' r='3'/><circle cx='88' cy='90' r='2'/></g>"),
+    },
+  },
+  {
+    id: "goldpunkte",
+    name: "Goldpunkte",
+    dark: true,
+    style: {
+      backgroundColor: "#243f34",
+      backgroundImage: "radial-gradient(#d8b25c 4px, transparent 4.5px), radial-gradient(#d8b25c 2.5px, transparent 3px)",
+      backgroundSize: "70px 70px, 70px 70px",
+      backgroundPosition: "0 0, 35px 35px",
+    },
+  },
 ];
+
+papers.push(
+  {
+    id: "vichyrot", name: "Vichy Rot",
+    style: {
+      backgroundColor: "#fbf6ec",
+      backgroundImage: "linear-gradient(90deg, rgba(168,50,42,.28) 50%, transparent 50%), linear-gradient(rgba(168,50,42,.28) 50%, transparent 50%)",
+      backgroundSize: "56px 56px",
+    },
+  },
+  {
+    id: "zuckerstange", name: "Zuckerstange",
+    style: { backgroundColor: "#fbf4e8", backgroundImage: "repeating-linear-gradient(-45deg, rgba(168,50,42,.18) 0 22px, transparent 22px 64px)" },
+  },
+  {
+    id: "schneekraft", name: "Kraft mit Schnee",
+    style: {
+      backgroundColor: "#c39a6b",
+      backgroundImage:
+        "radial-gradient(rgba(255,255,255,.85) 2.5px, transparent 3px), radial-gradient(rgba(255,255,255,.55) 1.5px, transparent 2px), radial-gradient(rgba(90,60,30,.12) 1px, transparent 1.5px)",
+      backgroundSize: "80px 80px, 43px 43px, 7px 7px",
+      backgroundPosition: "0 0, 21px 17px, 0 0",
+    },
+  },
+);
 
 export const paperMap = Object.fromEntries(papers.map((p) => [p.id, p])) as Record<PaperId, (typeof papers)[number]>;
 
@@ -92,11 +158,16 @@ export const fonts: { id: FontId; name: string; family: string; size: number }[]
   { id: "schreib", name: "Schreibschrift", family: "var(--font-script), cursive", size: 1.1 },
   { id: "serif", name: "Elegant", family: "var(--font-cormorant), serif", size: 0.8 },
   { id: "rund", name: "Verspielt", family: "var(--font-fredoka), sans-serif", size: 0.8 },
+  { id: "weihnacht", name: "Weihnacht", family: "var(--font-weihnacht), cursive", size: 0.95 },
+  { id: "maschine", name: "Schreibmaschine", family: "var(--font-maschine), monospace", size: 0.72 },
+  { id: "schwung", name: "Nostalgie", family: "var(--font-schwung), cursive", size: 0.9 },
+  { id: "feder", name: "Feder", family: "var(--font-feder), cursive", size: 0.6 },
+  { id: "amatic", name: "Kreide", family: "var(--font-amatic), sans-serif", size: 1.15 },
 ];
 
 export const fontMap = Object.fromEntries(fonts.map((f) => [f.id, f])) as Record<FontId, (typeof fonts)[number]>;
 
-export const textColors = ["#3b2f2a", "#b5573b", "#7d8b63", "#e3a993", "#e8577a", "#c8102e", "#2b6cb0", "#4f8a5b", "#8a6d3b", "#7a5d99", "#ffffff"];
+export const textColors = ["#3b2f2a", "#b5573b", "#7d8b63", "#e3a993", "#e8577a", "#c8102e", "#2b6cb0", "#4f8a5b", "#8a6d3b", "#7a5d99", "#8c2f35", "#2f5040", "#c79a3f", "#f3d27a", "#ffffff"];
 
 const templatePaper: Record<TemplateId, PaperId> = {
   journal: "creme",
@@ -108,7 +179,7 @@ const templatePaper: Record<TemplateId, PaperId> = {
 
 const templateStickers: Record<TemplateId, string[]> = {
   journal: ["zweig", "funkeln", "herzchen", "blume", "zweig"],
-  weihnachten: ["tannenbaum", "schneeflocke", "stern", "geschenk", "funkeln"],
+  weihnachten: ["stechpalme", "bild-stern-gold", "zuckerstange", "kugel", "schneeflocke"],
   geburtstag: ["ballon", "torte", "funkeln", "herz", "ballon"],
   hochzeit: ["ringe", "zweig", "gaensebluemchen", "herzchen", "zweig"],
   minimal: ["funkeln", "blume", "herz", "zweig", "stern"],
